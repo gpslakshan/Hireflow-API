@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine # Alpine = lightweight Linux base image
+    container_name: hireflow_postgres
+    restart: unless-stopped # Auto-restart if it crashes, but not if you manually stop it
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "${DB_PORT}:5432" # Maps your machine's port to the container's port
+    volumes:
+      - hireflow_pgdata:/var/lib/postgresql/data # Persist data across container restarts
+
+volumes:
+  hireflow_pgdata: # Named volume — Docker manages this on your machine
