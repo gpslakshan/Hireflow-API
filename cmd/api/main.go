@@ -21,12 +21,16 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to get sql.DB: %v", err)
 	}
-	sqlDB.SetMaxOpenConns(25) // Max concurrent DB connections
-	sqlDB.SetMaxIdleConns(10) // Connections kept alive when idle
+	sqlDB.SetMaxOpenConns(25)
+	sqlDB.SetMaxIdleConns(10)
 	defer sqlDB.Close()
 
-	// 3. Set Gin mode
-	gin.SetMode(cfg.AppEnv)
+	// 3. Set Gin mode based on environment
+	if cfg.AppEnv == "production" {
+		gin.SetMode(gin.ReleaseMode)
+	} else {
+		gin.SetMode(gin.DebugMode)
+	}
 
 	// 4. Start server
 	log.Printf("server starting on port %s", cfg.AppPort)
