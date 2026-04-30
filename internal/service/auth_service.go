@@ -10,6 +10,7 @@ import (
 	"github.com/gpslakshan/hireflow/internal/config"
 	"github.com/gpslakshan/hireflow/internal/domain/dto"
 	"github.com/gpslakshan/hireflow/internal/domain/entity"
+	"github.com/gpslakshan/hireflow/internal/repository"
 
 	"golang.org/x/crypto/bcrypt"
 )
