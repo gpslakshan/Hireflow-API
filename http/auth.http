@@ -1,0 +1,68 @@
+### Variables
+@baseUrl = http://localhost:8080/api/v1
+@token = <paste_your_token_here_after_login>
+
+
+### ─────────────────────────────────────────
+### Register a new candidate
+### ─────────────────────────────────────────
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "full_name": "Alice Smith",
+  "email": "alice@example.com",
+  "password": "secret1234",
+  "role": "candidate"
+}
+
+
+### ─────────────────────────────────────────
+### Register a recruiter
+### ─────────────────────────────────────────
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "full_name": "Bob Recruiter",
+  "email": "bob@example.com",
+  "password": "secret1234",
+  "role": "recruiter"
+}
+
+
+### ─────────────────────────────────────────
+### Login — candidate
+### ─────────────────────────────────────────
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "alice@example.com",
+  "password": "secret1234"
+}
+
+
+### ─────────────────────────────────────────
+### Login — wrong password (expect 401)
+### ─────────────────────────────────────────
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "alice@example.com",
+  "password": "wrongpassword"
+}
+
+
+### ─────────────────────────────────────────
+### GET /me — protected (expect 200)
+### ─────────────────────────────────────────
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{token}}
+
+
+### ─────────────────────────────────────────
+### GET /me — no token (expect 401)
+### ─────────────────────────────────────────
+GET {{baseUrl}}/auth/me
