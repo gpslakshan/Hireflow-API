@@ -102,3 +102,7 @@ func (s *AuthService) generateJWT(user entity.User) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(s.cfg.JWTSecret))
 }
+
+func (s *AuthService) GetByID(id string) (*entity.User, error) {
+	return s.userRepo.FindByID(id)
+}
