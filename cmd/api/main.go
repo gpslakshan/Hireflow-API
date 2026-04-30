@@ -15,6 +15,7 @@ func main() {
 
 	// 2. Connect to database
 	db := database.Connect(cfg)
+	database.Migrate(db)
 
 	// Retrieve underlying sql.DB to configure connection pool
 	sqlDB, err := db.DB()

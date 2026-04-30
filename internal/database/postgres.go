@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/gpslakshan/hireflow/internal/config"
+	"github.com/gpslakshan/hireflow/internal/domain/entity"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -39,4 +40,20 @@ func Connect(cfg *config.Config) *gorm.DB {
 
 	log.Println("database connection established")
 	return db
+}
+
+// Migrate runs GORM AutoMigrate for all entities.
+// Creates tables if they don't exist, adds missing columns.
+// Does NOT delete columns or change types — safe to run on startup.
+func Migrate(db *gorm.DB) {
+	err := db.AutoMigrate(
+		&entity.Company{}, // Company first — User has FK to Company
+		&entity.User{},
+		&entity.Job{},
+		&entity.Application{},
+	)
+	if err != nil {
+		log.Fatalf("migration failed: %v", err)
+	}
+	log.Println("database migration completed")
 }
