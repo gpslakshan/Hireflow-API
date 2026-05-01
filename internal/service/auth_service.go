@@ -23,11 +23,11 @@ var (
 )
 
 type AuthService struct {
-	userRepo *repository.UserRepository
+	userRepo repository.UserRepo
 	cfg      *config.Config
 }
 
-func NewAuthService(userRepo *repository.UserRepository, cfg *config.Config) *AuthService {
+func NewAuthService(userRepo repository.UserRepo, cfg *config.Config) *AuthService {
 	return &AuthService{userRepo: userRepo, cfg: cfg}
 }
 

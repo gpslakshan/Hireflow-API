@@ -18,13 +18,13 @@ var (
 )
 
 type ApplicationService struct {
-	appRepo *repository.ApplicationRepository
-	jobRepo *repository.JobRepository
+	appRepo repository.AppRepo
+	jobRepo repository.JobRepo
 }
 
 func NewApplicationService(
-	appRepo *repository.ApplicationRepository,
-	jobRepo *repository.JobRepository,
+	appRepo repository.AppRepo,
+	jobRepo repository.JobRepo,
 ) *ApplicationService {
 	return &ApplicationService{appRepo: appRepo, jobRepo: jobRepo}
 }

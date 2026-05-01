@@ -16,10 +16,10 @@ var (
 )
 
 type CompanyService struct {
-	companyRepo *repository.CompanyRepository
+	companyRepo repository.CompanyRepo
 }
 
-func NewCompanyService(companyRepo *repository.CompanyRepository) *CompanyService {
+func NewCompanyService(companyRepo repository.CompanyRepo) *CompanyService {
 	return &CompanyService{companyRepo: companyRepo}
 }
 

@@ -17,13 +17,13 @@ var (
 )
 
 type JobService struct {
-	jobRepo     *repository.JobRepository
-	companyRepo *repository.CompanyRepository
+	jobRepo     repository.JobRepo
+	companyRepo repository.CompanyRepo
 }
 
 func NewJobService(
-	jobRepo *repository.JobRepository,
-	companyRepo *repository.CompanyRepository,
+	jobRepo repository.JobRepo,
+	companyRepo repository.CompanyRepo,
 ) *JobService {
 	return &JobService{jobRepo: jobRepo, companyRepo: companyRepo}
 }
