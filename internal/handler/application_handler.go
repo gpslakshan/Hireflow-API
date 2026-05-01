@@ -13,11 +13,11 @@ import (
 )
 
 type ApplicationHandler struct {
-	appService *service.ApplicationService
+	appService service.ApplicationServiceInterface
 	validate   *validator.Validate
 }
 
-func NewApplicationHandler(appService *service.ApplicationService) *ApplicationHandler {
+func NewApplicationHandler(appService service.ApplicationServiceInterface) *ApplicationHandler {
 	return &ApplicationHandler{
 		appService: appService,
 		validate:   validator.New(),

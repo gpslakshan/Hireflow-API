@@ -13,11 +13,11 @@ import (
 )
 
 type CompanyHandler struct {
-	companyService *service.CompanyService
+	companyService service.CompanyServiceInterface
 	validate       *validator.Validate
 }
 
-func NewCompanyHandler(companyService *service.CompanyService) *CompanyHandler {
+func NewCompanyHandler(companyService service.CompanyServiceInterface) *CompanyHandler {
 	return &CompanyHandler{
 		companyService: companyService,
 		validate:       validator.New(),

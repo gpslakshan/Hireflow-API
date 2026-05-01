@@ -13,11 +13,11 @@ import (
 )
 
 type JobHandler struct {
-	jobService *service.JobService
+	jobService service.JobServiceInterface
 	validate   *validator.Validate
 }
 
-func NewJobHandler(jobService *service.JobService) *JobHandler {
+func NewJobHandler(jobService service.JobServiceInterface) *JobHandler {
 	return &JobHandler{
 		jobService: jobService,
 		validate:   validator.New(),
