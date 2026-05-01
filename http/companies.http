@@ -1,0 +1,126 @@
+### Variables
+@baseUrl = http://localhost:8080/api/v1
+@adminToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3Nzc4OTMzNTksImlhdCI6MTc3NzYzNDE1OSwicm9sZSI6ImFkbWluIiwidXNlcl9pZCI6IjNjZTJhYjViLWZiYTgtNGNmOC04YWQ0LWRjYzI5OTk1ZDEyMSJ9.4pFWGdsLXYOJ_ndmDlVkZKTA50jODO9F_4KupqlTbyQ
+@recruiterToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3Nzc4OTM1MjgsImlhdCI6MTc3NzYzNDMyOCwicm9sZSI6InJlY3J1aXRlciIsInVzZXJfaWQiOiJhMmE2Y2ZkNS0yNTc3LTQ1OWMtOWEwZi0wYTAzODIwOTBkYzcifQ.KfanGE_S7eyLMsmUwJBty7EaC6acnXbRBePs15HucSk
+@companyId = 59bcfd30-2795-4470-bb1f-47e969ff9b57
+
+
+### ─────────────────────────────────────────
+### Create a company (admin only — expect 201)
+### ─────────────────────────────────────────
+POST {{baseUrl}}/companies
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "name": "TechCorp Lanka",
+  "description": "A leading software company in Sri Lanka.",
+  "industry": "Technology",
+  "website": "https://techcorplanka.com",
+  "location": "Colombo, Sri Lanka"
+}
+
+
+### ─────────────────────────────────────────
+### Create a company as recruiter (expect 403)
+### ─────────────────────────────────────────
+POST {{baseUrl}}/companies
+Content-Type: application/json
+Authorization: Bearer {{recruiterToken}}
+
+{
+  "name": "Fake Company",
+  "description": "Should not be created.",
+  "industry": "Finance",
+  "website": "https://fake.com",
+  "location": "Galle, Sri Lanka"
+}
+
+
+### ─────────────────────────────────────────
+### Create a company — no token (expect 401)
+### ─────────────────────────────────────────
+POST {{baseUrl}}/companies
+Content-Type: application/json
+
+{
+  "name": "Ghost Company",
+  "description": "No auth provided.",
+  "industry": "Retail",
+  "website": "https://ghost.com",
+  "location": "Kandy, Sri Lanka"
+}
+
+
+### ─────────────────────────────────────────
+### Create a company — missing required fields (expect 422)
+### ─────────────────────────────────────────
+POST {{baseUrl}}/companies
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "name": "Incomplete Co"
+}
+
+
+### ─────────────────────────────────────────
+### Get all companies (public — expect 200)
+### ─────────────────────────────────────────
+GET {{baseUrl}}/companies
+
+
+### ─────────────────────────────────────────
+### Get company by ID (public — expect 200)
+### ─────────────────────────────────────────
+GET {{baseUrl}}/companies/{{companyId}}
+
+
+### ─────────────────────────────────────────
+### Get company — invalid UUID (expect 400)
+### ─────────────────────────────────────────
+GET {{baseUrl}}/companies/not-a-valid-uuid
+
+
+### ─────────────────────────────────────────
+### Get company — non-existent ID (expect 404)
+### ─────────────────────────────────────────
+GET {{baseUrl}}/companies/00000000-0000-0000-0000-000000000000
+
+
+### ─────────────────────────────────────────
+### Update company (recruiter — expect 200)
+### ─────────────────────────────────────────
+PUT {{baseUrl}}/companies/{{companyId}}
+Content-Type: application/json
+Authorization: Bearer {{recruiterToken}}
+
+{
+  "description": "Updated: Sri Lanka's fastest growing tech company.",
+  "location": "Colombo 03, Sri Lanka"
+}
+
+
+### ─────────────────────────────────────────
+### Update company — no token (expect 401)
+### ─────────────────────────────────────────
+PUT {{baseUrl}}/companies/{{companyId}}
+Content-Type: application/json
+
+{
+  "description": "Should not work."
+}
+
+
+### ─────────────────────────────────────────
+### Delete company as recruiter (expect 403)
+### ─────────────────────────────────────────
+DELETE {{baseUrl}}/companies/{{companyId}}
+Authorization: Bearer {{recruiterToken}}
+
+
+### ─────────────────────────────────────────
+### Delete company (admin — expect 204)
+### ─────────────────────────────────────────
+DELETE {{baseUrl}}/companies/{{companyId}}
+Authorization: Bearer {{adminToken}}
