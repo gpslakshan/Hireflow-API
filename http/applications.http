@@ -1,0 +1,214 @@
+### Variables
+@baseUrl = http://localhost:8080/api/v1
+@candidateToken = <paste_candidate_token_here>
+@recruiterToken = <paste_recruiter_token_here>
+@jobId = <paste_open_job_id_here>
+@applicationId = <paste_application_id_here>
+
+
+### ─────────────────────────────────────────
+### Apply to a job (candidate — expect 201)
+### ─────────────────────────────────────────
+POST {{baseUrl}}/jobs/{{jobId}}/apply
+Content-Type: application/json
+Authorization: Bearer {{candidateToken}}
+
+{
+  "cover_letter": "I am very excited to apply for this role. I have 4 years of experience building REST APIs in Go and would love to contribute to your team."
+}
+
+
+### ─────────────────────────────────────────
+### Apply to the same job again (expect 409 — already applied)
+### ─────────────────────────────────────────
+POST {{baseUrl}}/jobs/{{jobId}}/apply
+Content-Type: application/json
+Authorization: Bearer {{candidateToken}}
+
+{
+  "cover_letter": "Trying to apply again."
+}
+
+
+### ─────────────────────────────────────────
+### Apply to a closed job (expect 409 — job closed)
+### ─────────────────────────────────────────
+# First close the job using jobs.http, then run this
+# POST {{baseUrl}}/jobs/{{jobId}}/apply
+# Content-Type: application/json
+# Authorization: Bearer {{candidateToken}}
+#
+# {
+#   "cover_letter": "This job is closed."
+# }
+
+
+### ─────────────────────────────────────────
+### Apply to a job — recruiter tries (expect 403)
+### ─────────────────────────────────────────
+POST {{baseUrl}}/jobs/{{jobId}}/apply
+Content-Type: application/json
+Authorization: Bearer {{recruiterToken}}
+
+{
+  "cover_letter": "Recruiters cannot apply to jobs."
+}
+
+
+### ─────────────────────────────────────────
+### Apply to a job — no token (expect 401)
+### ─────────────────────────────────────────
+POST {{baseUrl}}/jobs/{{jobId}}/apply
+Content-Type: application/json
+
+{
+  "cover_letter": "No auth provided."
+}
+
+
+### ─────────────────────────────────────────
+### Get my applications (candidate — expect 200)
+### ─────────────────────────────────────────
+GET {{baseUrl}}/applications/my
+Authorization: Bearer {{candidateToken}}
+
+
+### ─────────────────────────────────────────
+### Get my applications — recruiter tries (expect 403)
+### ─────────────────────────────────────────
+GET {{baseUrl}}/applications/my
+Authorization: Bearer {{recruiterToken}}
+
+
+### ─────────────────────────────────────────
+### Get application by ID — as candidate (expect 200)
+### ─────────────────────────────────────────
+GET {{baseUrl}}/applications/{{applicationId}}
+Authorization: Bearer {{candidateToken}}
+
+
+### ─────────────────────────────────────────
+### Get application by ID — as recruiter who owns the job (expect 200)
+### ─────────────────────────────────────────
+GET {{baseUrl}}/applications/{{applicationId}}
+Authorization: Bearer {{recruiterToken}}
+
+
+### ─────────────────────────────────────────
+### Get application — non-existent ID (expect 404)
+### ─────────────────────────────────────────
+GET {{baseUrl}}/applications/00000000-0000-0000-0000-000000000000
+Authorization: Bearer {{candidateToken}}
+
+
+### ─────────────────────────────────────────
+### Get all applications for a job (recruiter — expect 200)
+### ─────────────────────────────────────────
+GET {{baseUrl}}/jobs/{{jobId}}/applications
+Authorization: Bearer {{recruiterToken}}
+
+
+### ─────────────────────────────────────────
+### Get applications for a job — candidate tries (expect 403)
+### ─────────────────────────────────────────
+GET {{baseUrl}}/jobs/{{jobId}}/applications
+Authorization: Bearer {{candidateToken}}
+
+
+### ─────────────────────────────────────────
+### Update application status → screening (recruiter — expect 200)
+### ─────────────────────────────────────────
+PATCH {{baseUrl}}/applications/{{applicationId}}/status
+Content-Type: application/json
+Authorization: Bearer {{recruiterToken}}
+
+{
+  "status": "screening"
+}
+
+
+### ─────────────────────────────────────────
+### Update application status → interview (recruiter — expect 200)
+### ─────────────────────────────────────────
+PATCH {{baseUrl}}/applications/{{applicationId}}/status
+Content-Type: application/json
+Authorization: Bearer {{recruiterToken}}
+
+{
+  "status": "interview"
+}
+
+
+### ─────────────────────────────────────────
+### Update application status → offer (recruiter — expect 200)
+### ─────────────────────────────────────────
+PATCH {{baseUrl}}/applications/{{applicationId}}/status
+Content-Type: application/json
+Authorization: Bearer {{recruiterToken}}
+
+{
+  "status": "offer"
+}
+
+
+### ─────────────────────────────────────────
+### Update application status → hired (recruiter — expect 200)
+### ─────────────────────────────────────────
+PATCH {{baseUrl}}/applications/{{applicationId}}/status
+Content-Type: application/json
+Authorization: Bearer {{recruiterToken}}
+
+{
+  "status": "hired"
+}
+
+
+### ─────────────────────────────────────────
+### Update application status → rejected (recruiter — expect 200)
+### ─────────────────────────────────────────
+PATCH {{baseUrl}}/applications/{{applicationId}}/status
+Content-Type: application/json
+Authorization: Bearer {{recruiterToken}}
+
+{
+  "status": "rejected"
+}
+
+
+### ─────────────────────────────────────────
+### Update status — invalid value (expect 422)
+### ─────────────────────────────────────────
+PATCH {{baseUrl}}/applications/{{applicationId}}/status
+Content-Type: application/json
+Authorization: Bearer {{recruiterToken}}
+
+{
+  "status": "applied"
+}
+
+
+### ─────────────────────────────────────────
+### Update status — candidate tries (expect 403)
+### ─────────────────────────────────────────
+PATCH {{baseUrl}}/applications/{{applicationId}}/status
+Content-Type: application/json
+Authorization: Bearer {{candidateToken}}
+
+{
+  "status": "screening"
+}
+
+
+### ─────────────────────────────────────────
+### Withdraw application (candidate — expect 204)
+### ─────────────────────────────────────────
+# ⚠️  Run this last — hard deletes the application
+# DELETE {{baseUrl}}/applications/{{applicationId}}
+# Authorization: Bearer {{candidateToken}}
+
+
+### ─────────────────────────────────────────
+### Withdraw — recruiter tries (expect 403)
+### ─────────────────────────────────────────
+DELETE {{baseUrl}}/applications/{{applicationId}}
+Authorization: Bearer {{recruiterToken}}
