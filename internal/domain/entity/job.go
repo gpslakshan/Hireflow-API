@@ -7,6 +7,9 @@ import (
 	"gorm.io/gorm"
 )
 
+type JobType string
+type JobStatus string
+
 const (
 	JobTypeFull     JobType = "full_time"
 	JobTypePart     JobType = "part_time"
