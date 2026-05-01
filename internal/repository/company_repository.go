@@ -24,6 +24,11 @@ func (r *CompanyRepository) FindAll() ([]entity.Company, error) {
 	return companies, err
 }
 
+// FindByID returns a pointer to the company entity to support two main goals:
+//  1. Semantic Clarity: It allows returning 'nil' to explicitly signal the record wasn't found.
+//  2. Mutability: It provides the caller with a direct reference to the object in memory.
+//     This allows the Service layer to modify fields directly on the retrieved instance
+//     and pass that same instance back to the Update method without unnecessary memory copying.
 func (r *CompanyRepository) FindByID(id uuid.UUID) (*entity.Company, error) {
 	var company entity.Company
 	err := r.db.Where("id = ?", id).First(&company).Error
