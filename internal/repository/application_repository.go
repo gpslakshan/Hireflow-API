@@ -18,11 +18,14 @@ func (r *ApplicationRepository) Create(app *entity.Application) error {
 	return r.db.Create(app).Error
 }
 
-// FindByID preloads Job and Candidate for rich responses
+// FindByID preloads Job (with its Company) and Candidate for rich responses
 func (r *ApplicationRepository) FindByID(id uuid.UUID) (*entity.Application, error) {
 	var app entity.Application
-	err := r.db.Preload("Job").Preload("Candidate").
-		Where("id = ?", id).First(&app).Error
+	err := r.db.
+		Preload("Job.Company"). // ← nested preload: Job then Job.Company
+		Preload("Candidate").
+		Where("id = ?", id).
+		First(&app).Error
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +35,8 @@ func (r *ApplicationRepository) FindByID(id uuid.UUID) (*entity.Application, err
 // FindByCandidate returns all applications submitted by a specific candidate
 func (r *ApplicationRepository) FindByCandidate(candidateID uuid.UUID) ([]entity.Application, error) {
 	var apps []entity.Application
-	err := r.db.Preload("Job").
+	err := r.db.
+		Preload("Job.Company"). // ← nested preload
 		Where("candidate_id = ?", candidateID).
 		Find(&apps).Error
 	return apps, err
@@ -41,7 +45,9 @@ func (r *ApplicationRepository) FindByCandidate(candidateID uuid.UUID) ([]entity
 // FindByJob returns all applications for a specific job
 func (r *ApplicationRepository) FindByJob(jobID uuid.UUID) ([]entity.Application, error) {
 	var apps []entity.Application
-	err := r.db.Preload("Candidate").
+	err := r.db.
+		Preload("Job.Company"). // ← nested preload
+		Preload("Candidate").
 		Where("job_id = ?", jobID).
 		Find(&apps).Error
 	return apps, err
