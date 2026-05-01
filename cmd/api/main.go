@@ -36,13 +36,26 @@ func main() {
 		gin.SetMode(gin.DebugMode)
 	}
 
-	// 4. Wire dependencies — bottom up
+	// 4. Repositories
 	userRepo := repository.NewUserRepository(db)
-	authService := service.NewAuthService(userRepo, cfg)
-	authHandler := handler.NewAuthHandler(authService)
+	companyRepo := repository.NewCompanyRepository(db)
+	jobRepo := repository.NewJobRepository(db)
+	appRepo := repository.NewApplicationRepository(db)
 
-	// 5. Setup router and start server
-	r := router.Setup(cfg, authHandler)
+	// 5. Services
+	authService := service.NewAuthService(userRepo, cfg)
+	companyService := service.NewCompanyService(companyRepo)
+	jobService := service.NewJobService(jobRepo, companyRepo)
+	appService := service.NewApplicationService(appRepo, jobRepo)
+
+	// 6. Handlers
+	authHandler := handler.NewAuthHandler(authService)
+	companyHandler := handler.NewCompanyHandler(companyService)
+	jobHandler := handler.NewJobHandler(jobService)
+	appHandler := handler.NewApplicationHandler(appService)
+
+	// 7. Router
+	r := router.Setup(cfg, authHandler, companyHandler, jobHandler, appHandler)
 
 	log.Printf("server starting on port %s", cfg.AppPort)
 	if err := r.Run(fmt.Sprintf(":%s", cfg.AppPort)); err != nil {
