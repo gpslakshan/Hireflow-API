@@ -1,8 +1,8 @@
 ### Variables
 @baseUrl = http://localhost:8080/api/v1
-@adminToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3Nzc4OTMzNTksImlhdCI6MTc3NzYzNDE1OSwicm9sZSI6ImFkbWluIiwidXNlcl9pZCI6IjNjZTJhYjViLWZiYTgtNGNmOC04YWQ0LWRjYzI5OTk1ZDEyMSJ9.4pFWGdsLXYOJ_ndmDlVkZKTA50jODO9F_4KupqlTbyQ
-@recruiterToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3Nzc4OTM1MjgsImlhdCI6MTc3NzYzNDMyOCwicm9sZSI6InJlY3J1aXRlciIsInVzZXJfaWQiOiJhMmE2Y2ZkNS0yNTc3LTQ1OWMtOWEwZi0wYTAzODIwOTBkYzcifQ.KfanGE_S7eyLMsmUwJBty7EaC6acnXbRBePs15HucSk
-@companyId = 59bcfd30-2795-4470-bb1f-47e969ff9b57
+@adminToken = <paste_admin_token_here>
+@recruiterToken = <paste_recruiter_token_here>
+@companyId = <paste_company_id_here>
 
 
 ### ─────────────────────────────────────────
@@ -63,66 +63,6 @@ Authorization: Bearer {{adminToken}}
   "name": "Incomplete Co"
 }
 
-### ─────────────────────────────────────────
-### Create Company: GreenAgro Solutions (expect 201)
-### ─────────────────────────────────────────
-POST {{baseUrl}}/companies
-Content-Type: application/json
-Authorization: Bearer {{adminToken}}
-
-{
-  "name": "GreenAgro Solutions",
-  "description": "Innovating sustainable farming practices and organic exports.",
-  "industry": "Agriculture",
-  "website": "https://greenagro.lk",
-  "location": "Kandy, Sri Lanka"
-}
-
-### ─────────────────────────────────────────
-### Create Company: BlueOcean Logistics (expect 201)
-### ─────────────────────────────────────────
-POST {{baseUrl}}/companies
-Content-Type: application/json
-Authorization: Bearer {{adminToken}}
-
-{
-  "name": "BlueOcean Logistics",
-  "description": "Global freight forwarding and supply chain management experts.",
-  "industry": "Logistics",
-  "website": "https://blueoceanlogistics.com",
-  "location": "Hambantota, Sri Lanka"
-}
-
-### ─────────────────────────────────────────
-### Create Company: Ceylon Stay Resorts (expect 201)
-### ─────────────────────────────────────────
-POST {{baseUrl}}/companies
-Content-Type: application/json
-Authorization: Bearer {{adminToken}}
-
-{
-  "name": "Ceylon Stay Resorts",
-  "description": "A luxury boutique hotel chain focusing on eco-tourism.",
-  "industry": "Hospitality",
-  "website": "https://ceylonstay.com",
-  "location": "Galle, Sri Lanka"
-}
-
-### ─────────────────────────────────────────
-### Create Company: PayHere Lanka (expect 201)
-### ─────────────────────────────────────────
-POST {{baseUrl}}/companies
-Content-Type: application/json
-Authorization: Bearer {{adminToken}}
-
-{
-  "name": "PayHere Lanka",
-  "description": "Sri Lanka's leading authorized payment aggregator for online businesses.",
-  "industry": "Fintech",
-  "website": "https://payhere.lk",
-  "location": "Nugegoda, Sri Lanka"
-}
-
 
 ### ─────────────────────────────────────────
 ### Get all companies (public — expect 200)
@@ -173,14 +113,15 @@ Content-Type: application/json
 
 
 ### ─────────────────────────────────────────
+### Delete company (admin — expect 204)
+### ─────────────────────────────────────────
+# ⚠️  Run this last — deleting removes the company used by other tests
+# DELETE {{baseUrl}}/companies/{{companyId}}
+# Authorization: Bearer {{adminToken}}
+
+
+### ─────────────────────────────────────────
 ### Delete company as recruiter (expect 403)
 ### ─────────────────────────────────────────
 DELETE {{baseUrl}}/companies/{{companyId}}
 Authorization: Bearer {{recruiterToken}}
-
-
-### ─────────────────────────────────────────
-### Delete company (admin — expect 204)
-### ─────────────────────────────────────────
-DELETE {{baseUrl}}/companies/{{companyId}}
-Authorization: Bearer {{adminToken}}
