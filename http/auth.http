@@ -30,6 +30,17 @@ Content-Type: application/json
   "role": "recruiter"
 }
 
+### ─────────────────────────────────────────
+### Login as admin (seeded user)
+### ─────────────────────────────────────────
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@hireflow.com",
+  "password": "admin1234"
+}
+
 
 ### ─────────────────────────────────────────
 ### Login — candidate
@@ -39,6 +50,17 @@ Content-Type: application/json
 
 {
   "email": "alice@example.com",
+  "password": "secret1234"
+}
+
+### ─────────────────────────────────────────
+### Login — recruiter
+### ─────────────────────────────────────────
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "bob@example.com",
   "password": "secret1234"
 }
 
