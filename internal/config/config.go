@@ -22,6 +22,9 @@ type Config struct {
 
 	JWTSecret      string
 	JWTExpiryHours string
+
+	AdminEmail    string
+	AdminPassword string
 }
 
 // Load reads the .env file and returns a populated Config struct.
@@ -45,6 +48,9 @@ func Load() *Config {
 
 		JWTSecret:      getEnv("JWT_SECRET", ""),
 		JWTExpiryHours: getEnv("JWT_EXPIRY_HOURS", "72"),
+
+		AdminEmail:    getEnv("ADMIN_EMAIL", "admin@hireflow.com"),
+		AdminPassword: getEnv("ADMIN_PASSWORD", ""),
 	}
 }
 
