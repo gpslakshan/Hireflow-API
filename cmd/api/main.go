@@ -17,7 +17,10 @@ func main() {
 	// 1. Config
 	cfg := config.Load()
 
-	// 2. Database
+	// 2. Logger — must initialise before anything else logs
+	config.InitLogger(cfg.AppEnv)
+
+	// 3. Database
 	db := database.Connect(cfg)
 	database.Migrate(db)
 	database.Seed(db, cfg)
@@ -30,32 +33,33 @@ func main() {
 	sqlDB.SetMaxIdleConns(10)
 	defer sqlDB.Close()
 
-	// 3. Gin mode
+	// 4. Gin mode
 	if cfg.AppEnv == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	} else {
 		gin.SetMode(gin.DebugMode)
 	}
 
-	// 4. Repositories
+	// 5. Wire dependencies
+	//  Repositories
 	userRepo := repository.NewUserRepository(db)
 	companyRepo := repository.NewCompanyRepository(db)
 	jobRepo := repository.NewJobRepository(db)
 	appRepo := repository.NewApplicationRepository(db)
 
-	// 5. Services
+	// Services
 	authService := service.NewAuthService(userRepo, cfg)
 	companyService := service.NewCompanyService(companyRepo)
 	jobService := service.NewJobService(jobRepo, companyRepo)
 	appService := service.NewApplicationService(appRepo, jobRepo)
 
-	// 6. Handlers
+	// Handlers
 	authHandler := handler.NewAuthHandler(authService)
 	companyHandler := handler.NewCompanyHandler(companyService)
 	jobHandler := handler.NewJobHandler(jobService)
 	appHandler := handler.NewApplicationHandler(appService)
 
-	// 7. Router
+	// 6. Router
 	r := router.Setup(cfg, authHandler, companyHandler, jobHandler, appHandler)
 
 	log.Printf("server starting on port %s", cfg.AppPort)
