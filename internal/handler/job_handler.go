@@ -24,15 +24,6 @@ func NewJobHandler(jobService *service.JobService) *JobHandler {
 	}
 }
 
-// extractUserID is a helper to pull user_id from Gin context (set by AuthMiddleware)
-func extractUserID(c *gin.Context) (uuid.UUID, error) {
-	raw, exists := c.Get("user_id")
-	if !exists {
-		return uuid.Nil, errors.New("user_id not found in context")
-	}
-	return uuid.Parse(raw.(string))
-}
-
 func (h *JobHandler) Create(c *gin.Context) {
 	companyID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
