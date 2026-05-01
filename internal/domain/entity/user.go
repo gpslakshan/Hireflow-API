@@ -8,7 +8,6 @@ import (
 )
 
 type Role string
-type ApplicationStatus string
 
 const (
 	RoleAdmin     Role = "admin"
