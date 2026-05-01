@@ -8,8 +8,6 @@ import (
 )
 
 type Role string
-type JobType string
-type JobStatus string
 type ApplicationStatus string
 
 const (
