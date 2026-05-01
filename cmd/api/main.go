@@ -1,8 +1,13 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gpslakshan/hireflow/internal/config"
@@ -11,6 +16,7 @@ import (
 	"github.com/gpslakshan/hireflow/internal/repository"
 	"github.com/gpslakshan/hireflow/internal/router"
 	"github.com/gpslakshan/hireflow/internal/service"
+	"github.com/rs/zerolog/log"
 )
 
 func main() {
@@ -27,7 +33,7 @@ func main() {
 
 	sqlDB, err := db.DB()
 	if err != nil {
-		log.Fatalf("failed to get sql.DB: %v", err)
+		log.Fatal().Err(err).Msg("failed to get sql.DB")
 	}
 	sqlDB.SetMaxOpenConns(25)
 	sqlDB.SetMaxIdleConns(10)
@@ -41,19 +47,16 @@ func main() {
 	}
 
 	// 5. Wire dependencies
-	//  Repositories
 	userRepo := repository.NewUserRepository(db)
 	companyRepo := repository.NewCompanyRepository(db)
 	jobRepo := repository.NewJobRepository(db)
 	appRepo := repository.NewApplicationRepository(db)
 
-	// Services
 	authService := service.NewAuthService(userRepo, cfg)
 	companyService := service.NewCompanyService(companyRepo)
 	jobService := service.NewJobService(jobRepo, companyRepo)
 	appService := service.NewApplicationService(appRepo, jobRepo)
 
-	// Handlers
 	authHandler := handler.NewAuthHandler(authService)
 	companyHandler := handler.NewCompanyHandler(companyService)
 	jobHandler := handler.NewJobHandler(jobService)
@@ -62,8 +65,37 @@ func main() {
 	// 6. Router
 	r := router.Setup(cfg, authHandler, companyHandler, jobHandler, appHandler)
 
-	log.Printf("server starting on port %s", cfg.AppPort)
-	if err := r.Run(fmt.Sprintf(":%s", cfg.AppPort)); err != nil {
-		log.Fatalf("failed to start server: %v", err)
+	// 7. Build http.Server manually so we can shut it down gracefully
+	srv := &http.Server{
+		Addr:         fmt.Sprintf(":%s", cfg.AppPort),
+		Handler:      r,
+		ReadTimeout:  10 * time.Second, // max time to read request
+		WriteTimeout: 10 * time.Second, // max time to write response
+		IdleTimeout:  60 * time.Second, // max time for keep-alive connections
 	}
+
+	// 8. Start server in a goroutine so it doesn't block the shutdown logic
+	go func() {
+		log.Info().Msgf("server starting on port %s", cfg.AppPort)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatal().Err(err).Msg("server failed to start")
+		}
+	}()
+
+	// 9. Block until we receive a termination signal (Ctrl+C or kill)
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+
+	log.Info().Msg("shutting down server...")
+
+	// 10. Give in-flight requests 10 seconds to complete
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatal().Err(err).Msg("server forced to shutdown")
+	}
+
+	log.Info().Msg("server stopped cleanly")
 }
