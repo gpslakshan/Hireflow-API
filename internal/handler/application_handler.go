@@ -44,7 +44,7 @@ func (h *ApplicationHandler) Apply(c *gin.Context) {
 	}
 
 	if err := h.validate.Struct(req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"errors": formatValidationErrors(err)})
 		return
 	}
 
@@ -162,7 +162,7 @@ func (h *ApplicationHandler) UpdateStatus(c *gin.Context) {
 	}
 
 	if err := h.validate.Struct(req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"errors": formatValidationErrors(err)})
 		return
 	}
 

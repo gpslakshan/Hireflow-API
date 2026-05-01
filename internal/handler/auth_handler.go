@@ -34,7 +34,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 
 	// 2. Validate fields
 	if err := h.validate.Struct(req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"errors": formatValidationErrors(err)})
 		return
 	}
 
@@ -62,7 +62,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 
 	if err := h.validate.Struct(req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"errors": formatValidationErrors(err)})
 		return
 	}
 
