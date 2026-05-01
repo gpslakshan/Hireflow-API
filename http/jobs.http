@@ -1,0 +1,164 @@
+### Variables
+@baseUrl = http://localhost:8080/api/v1
+@recruiterToken = <paste_recruiter_token_here>
+@candidateToken = <paste_candidate_token_here>
+@companyId = <paste_company_id_here>
+@jobId = <paste_job_id_here>
+
+
+### ─────────────────────────────────────────
+### Create a job under a company (recruiter — expect 201)
+### ─────────────────────────────────────────
+POST {{baseUrl}}/companies/{{companyId}}/jobs
+Content-Type: application/json
+Authorization: Bearer {{recruiterToken}}
+
+{
+  "title": "Senior Go Engineer",
+  "description": "We are looking for an experienced Go backend engineer to join our platform team.",
+  "location": "Colombo, Sri Lanka",
+  "job_type": "full_time"
+}
+
+
+### ─────────────────────────────────────────
+### Create a second job (for close/delete tests)
+### ─────────────────────────────────────────
+POST {{baseUrl}}/companies/{{companyId}}/jobs
+Content-Type: application/json
+Authorization: Bearer {{recruiterToken}}
+
+{
+  "title": "Junior React Developer",
+  "description": "Join our frontend team and build world-class UI components.",
+  "location": "Remote",
+  "job_type": "contract"
+}
+
+
+### ─────────────────────────────────────────
+### Create a job — invalid job_type (expect 422)
+### ─────────────────────────────────────────
+POST {{baseUrl}}/companies/{{companyId}}/jobs
+Content-Type: application/json
+Authorization: Bearer {{recruiterToken}}
+
+{
+  "title": "DevOps Lead",
+  "description": "Manage our cloud infrastructure.",
+  "location": "Remote",
+  "job_type": "freelance"
+}
+
+
+### ─────────────────────────────────────────
+### Create a job — candidate tries to post (expect 403)
+### ─────────────────────────────────────────
+POST {{baseUrl}}/companies/{{companyId}}/jobs
+Content-Type: application/json
+Authorization: Bearer {{candidateToken}}
+
+{
+  "title": "Should Fail",
+  "description": "Candidates cannot post jobs.",
+  "location": "Remote",
+  "job_type": "full_time"
+}
+
+
+### ─────────────────────────────────────────
+### Create a job — non-existent company (expect 404)
+### ─────────────────────────────────────────
+POST {{baseUrl}}/companies/00000000-0000-0000-0000-000000000000/jobs
+Content-Type: application/json
+Authorization: Bearer {{recruiterToken}}
+
+{
+  "title": "Ghost Job",
+  "description": "Company does not exist.",
+  "location": "Remote",
+  "job_type": "part_time"
+}
+
+
+### ─────────────────────────────────────────
+### Get all open jobs (public — expect 200)
+### ─────────────────────────────────────────
+GET {{baseUrl}}/jobs
+
+
+### ─────────────────────────────────────────
+### Get job by ID (public — expect 200)
+### ─────────────────────────────────────────
+GET {{baseUrl}}/jobs/{{jobId}}
+
+
+### ─────────────────────────────────────────
+### Get job — non-existent ID (expect 404)
+### ─────────────────────────────────────────
+GET {{baseUrl}}/jobs/00000000-0000-0000-0000-000000000000
+
+
+### ─────────────────────────────────────────
+### Update a job (recruiter — expect 200)
+### ─────────────────────────────────────────
+PUT {{baseUrl}}/jobs/{{jobId}}
+Content-Type: application/json
+Authorization: Bearer {{recruiterToken}}
+
+{
+  "title": "Senior Go Engineer (Updated)",
+  "location": "Hybrid — Colombo"
+}
+
+
+### ─────────────────────────────────────────
+### Update a job — candidate tries to update (expect 403)
+### ─────────────────────────────────────────
+PUT {{baseUrl}}/jobs/{{jobId}}
+Content-Type: application/json
+Authorization: Bearer {{candidateToken}}
+
+{
+  "title": "Should Not Update"
+}
+
+
+### ─────────────────────────────────────────
+### Update a job — no token (expect 401)
+### ─────────────────────────────────────────
+PUT {{baseUrl}}/jobs/{{jobId}}
+Content-Type: application/json
+
+{
+  "title": "No Auth Update"
+}
+
+
+### ─────────────────────────────────────────
+### Close a job (recruiter — expect 200)
+### ─────────────────────────────────────────
+PATCH {{baseUrl}}/jobs/{{jobId}}/close
+Authorization: Bearer {{recruiterToken}}
+
+
+### ─────────────────────────────────────────
+### Close the same job again (expect 409 conflict)
+### ─────────────────────────────────────────
+PATCH {{baseUrl}}/jobs/{{jobId}}/close
+Authorization: Bearer {{recruiterToken}}
+
+
+### ─────────────────────────────────────────
+### Delete a job (recruiter — expect 204)
+### ─────────────────────────────────────────
+# ⚠️  Uncomment to run — removes the job used by application tests
+# DELETE {{baseUrl}}/jobs/{{jobId}}
+# Authorization: Bearer {{recruiterToken}}
+
+
+### ─────────────────────────────────────────
+### Delete a job — candidate tries (expect 403)
+### ─────────────────────────────────────────
+DELETE {{baseUrl}}/jobs/{{jobId}}
+Authorization: Bearer {{candidateToken}}
