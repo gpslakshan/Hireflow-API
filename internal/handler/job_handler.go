@@ -2,7 +2,6 @@ package handler
 
 import (
 	"errors"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -27,90 +26,91 @@ func NewJobHandler(jobService service.JobServiceInterface) *JobHandler {
 func (h *JobHandler) Create(c *gin.Context) {
 	companyID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid company id"})
+		BadRequest(c, "invalid company id")
 		return
 	}
 
 	recruiterID, err := extractUserID(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		Unauthorized(c, "unauthorized")
 		return
 	}
 
 	var req dto.CreateJobRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		BadRequest(c, "invalid request body")
 		return
 	}
 
 	if err := h.validate.Struct(req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{"errors": formatValidationErrors(err)})
+		ValidationError(c, formatValidationErrors(err))
 		return
 	}
 
 	job, err := h.jobService.Create(companyID, recruiterID, req)
 	if err != nil {
 		if errors.Is(err, service.ErrCompanyNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			NotFound(c, err.Error())
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create job"})
+		InternalServerError(c, "failed to create job")
 		return
 	}
 
-	c.JSON(http.StatusCreated, mapper.ToJobResponse(job))
+	Created(c, "job created successfully", mapper.ToJobResponse(job))
 }
 
 func (h *JobHandler) GetAll(c *gin.Context) {
 	jobs, err := h.jobService.GetAll()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch jobs"})
+		InternalServerError(c, "failed to fetch jobs")
 		return
 	}
-	c.JSON(http.StatusOK, mapper.ToJobResponseList(jobs))
+
+	OK(c, "jobs retrieved successfully", mapper.ToJobResponseList(jobs))
 }
 
 func (h *JobHandler) GetByID(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid job id"})
+		BadRequest(c, "invalid job id")
 		return
 	}
 
 	job, err := h.jobService.GetByID(id)
 	if err != nil {
 		if errors.Is(err, service.ErrJobNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			NotFound(c, err.Error())
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch job"})
+		InternalServerError(c, "failed to fetch job")
 		return
 	}
 
-	c.JSON(http.StatusOK, mapper.ToJobResponse(job))
+	OK(c, "job retrieved successfully", mapper.ToJobResponse(job))
 }
 
 func (h *JobHandler) Update(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid job id"})
+		BadRequest(c, "invalid job id")
 		return
 	}
 
 	recruiterID, err := extractUserID(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		Unauthorized(c, "unauthorized")
 		return
 	}
 
 	var req dto.UpdateJobRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		BadRequest(c, "invalid request body")
 		return
 	}
 
 	if err := h.validate.Struct(req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{"errors": formatValidationErrors(err)})
+		ValidationError(c, formatValidationErrors(err))
 		return
 	}
 
@@ -118,28 +118,28 @@ func (h *JobHandler) Update(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrJobNotFound):
-			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			NotFound(c, err.Error())
 		case errors.Is(err, service.ErrUnauthorizedJob):
-			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+			Forbidden(c, err.Error())
 		default:
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update job"})
+			InternalServerError(c, "failed to update job")
 		}
 		return
 	}
 
-	c.JSON(http.StatusOK, mapper.ToJobResponse(job))
+	OK(c, "job updated successfully", mapper.ToJobResponse(job))
 }
 
 func (h *JobHandler) Close(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid job id"})
+		BadRequest(c, "invalid job id")
 		return
 	}
 
 	recruiterID, err := extractUserID(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		Unauthorized(c, "unauthorized")
 		return
 	}
 
@@ -147,44 +147,44 @@ func (h *JobHandler) Close(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrJobNotFound):
-			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			NotFound(c, err.Error())
 		case errors.Is(err, service.ErrUnauthorizedJob):
-			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+			Forbidden(c, err.Error())
 		case errors.Is(err, service.ErrJobAlreadyClosed):
-			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+			Conflict(c, err.Error())
 		default:
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to close job"})
+			InternalServerError(c, "failed to close job")
 		}
 		return
 	}
 
-	c.JSON(http.StatusOK, mapper.ToJobResponse(job))
+	OK(c, "job closed successfully", mapper.ToJobResponse(job))
 }
 
 func (h *JobHandler) Delete(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid job id"})
+		BadRequest(c, "invalid job id")
 		return
 	}
 
 	recruiterID, err := extractUserID(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		Unauthorized(c, "unauthorized")
 		return
 	}
 
 	if err := h.jobService.Delete(id, recruiterID); err != nil {
 		switch {
 		case errors.Is(err, service.ErrJobNotFound):
-			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			NotFound(c, err.Error())
 		case errors.Is(err, service.ErrUnauthorizedJob):
-			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+			Forbidden(c, err.Error())
 		default:
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete job"})
+			InternalServerError(c, "failed to delete job")
 		}
 		return
 	}
 
-	c.JSON(http.StatusNoContent, nil)
+	NoContent(c)
 }

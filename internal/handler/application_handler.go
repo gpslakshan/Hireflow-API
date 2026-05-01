@@ -2,7 +2,6 @@ package handler
 
 import (
 	"errors"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -27,24 +26,24 @@ func NewApplicationHandler(appService service.ApplicationServiceInterface) *Appl
 func (h *ApplicationHandler) Apply(c *gin.Context) {
 	jobID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid job id"})
+		BadRequest(c, "invalid job id")
 		return
 	}
 
 	candidateID, err := extractUserID(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		Unauthorized(c, "unauthorized")
 		return
 	}
 
 	var req dto.ApplyJobRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		BadRequest(c, "invalid request body")
 		return
 	}
 
 	if err := h.validate.Struct(req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{"errors": formatValidationErrors(err)})
+		ValidationError(c, formatValidationErrors(err))
 		return
 	}
 
@@ -52,46 +51,46 @@ func (h *ApplicationHandler) Apply(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrJobNotFound):
-			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			NotFound(c, err.Error())
 		case errors.Is(err, service.ErrJobClosed):
-			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+			Conflict(c, err.Error())
 		case errors.Is(err, service.ErrAlreadyApplied):
-			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+			Conflict(c, err.Error())
 		default:
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to submit application"})
+			InternalServerError(c, "failed to submit application")
 		}
 		return
 	}
 
-	c.JSON(http.StatusCreated, mapper.ToApplicationResponse(app))
+	Created(c, "application submitted successfully", mapper.ToApplicationResponse(app))
 }
 
 func (h *ApplicationHandler) GetMyApplications(c *gin.Context) {
 	candidateID, err := extractUserID(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		Unauthorized(c, "unauthorized")
 		return
 	}
 
 	apps, err := h.appService.GetMyApplications(candidateID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch applications"})
+		InternalServerError(c, "failed to fetch applications")
 		return
 	}
 
-	c.JSON(http.StatusOK, mapper.ToApplicationResponseList(apps))
+	OK(c, "applications retrieved successfully", mapper.ToApplicationResponseList(apps))
 }
 
 func (h *ApplicationHandler) GetByJob(c *gin.Context) {
 	jobID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid job id"})
+		BadRequest(c, "invalid job id")
 		return
 	}
 
 	recruiterID, err := extractUserID(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		Unauthorized(c, "unauthorized")
 		return
 	}
 
@@ -99,28 +98,28 @@ func (h *ApplicationHandler) GetByJob(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrJobNotFound):
-			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			NotFound(c, err.Error())
 		case errors.Is(err, service.ErrUnauthorizedJob):
-			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+			Forbidden(c, err.Error())
 		default:
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch applications"})
+			InternalServerError(c, "failed to fetch applications")
 		}
 		return
 	}
 
-	c.JSON(http.StatusOK, mapper.ToApplicationResponseList(apps))
+	OK(c, "applications retrieved successfully", mapper.ToApplicationResponseList(apps))
 }
 
 func (h *ApplicationHandler) GetByID(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid application id"})
+		BadRequest(c, "invalid application id")
 		return
 	}
 
 	userID, err := extractUserID(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		Unauthorized(c, "unauthorized")
 		return
 	}
 
@@ -130,39 +129,39 @@ func (h *ApplicationHandler) GetByID(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrApplicationNotFound):
-			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			NotFound(c, err.Error())
 		case errors.Is(err, service.ErrUnauthorizedApplication):
-			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+			Forbidden(c, err.Error())
 		default:
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch application"})
+			InternalServerError(c, "failed to fetch application")
 		}
 		return
 	}
 
-	c.JSON(http.StatusOK, mapper.ToApplicationResponse(app))
+	OK(c, "application retrieved successfully", mapper.ToApplicationResponse(app))
 }
 
 func (h *ApplicationHandler) UpdateStatus(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid application id"})
+		BadRequest(c, "invalid application id")
 		return
 	}
 
 	recruiterID, err := extractUserID(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		Unauthorized(c, "unauthorized")
 		return
 	}
 
 	var req dto.UpdateApplicationStatusRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		BadRequest(c, "invalid request body")
 		return
 	}
 
 	if err := h.validate.Struct(req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{"errors": formatValidationErrors(err)})
+		ValidationError(c, formatValidationErrors(err))
 		return
 	}
 
@@ -170,42 +169,42 @@ func (h *ApplicationHandler) UpdateStatus(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrApplicationNotFound):
-			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			NotFound(c, err.Error())
 		case errors.Is(err, service.ErrUnauthorizedApplication):
-			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+			Forbidden(c, err.Error())
 		default:
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update status"})
+			InternalServerError(c, "failed to update status")
 		}
 		return
 	}
 
-	c.JSON(http.StatusOK, mapper.ToApplicationResponse(app))
+	OK(c, "application status updated successfully", mapper.ToApplicationResponse(app))
 }
 
 func (h *ApplicationHandler) Withdraw(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid application id"})
+		BadRequest(c, "invalid application id")
 		return
 	}
 
 	candidateID, err := extractUserID(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		Unauthorized(c, "unauthorized")
 		return
 	}
 
 	if err := h.appService.Withdraw(id, candidateID); err != nil {
 		switch {
 		case errors.Is(err, service.ErrApplicationNotFound):
-			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			NotFound(c, err.Error())
 		case errors.Is(err, service.ErrUnauthorizedApplication):
-			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+			Forbidden(c, err.Error())
 		default:
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to withdraw application"})
+			InternalServerError(c, "failed to withdraw application")
 		}
 		return
 	}
 
-	c.JSON(http.StatusNoContent, nil)
+	NoContent(c)
 }

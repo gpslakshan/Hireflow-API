@@ -2,7 +2,6 @@ package handler
 
 import (
 	"errors"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -28,100 +27,100 @@ func (h *CompanyHandler) Create(c *gin.Context) {
 	var req dto.CreateCompanyRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		BadRequest(c, "invalid request body")
 		return
 	}
 
 	if err := h.validate.Struct(req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{"errors": formatValidationErrors(err)})
+		ValidationError(c, formatValidationErrors(err))
 		return
 	}
 
 	company, err := h.companyService.Create(req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create company"})
+		InternalServerError(c, "failed to create company")
 		return
 	}
 
-	c.JSON(http.StatusCreated, mapper.ToCompanyResponse(company))
+	Created(c, "company created successfully", mapper.ToCompanyResponse(company))
 }
 
 func (h *CompanyHandler) GetAll(c *gin.Context) {
 	companies, err := h.companyService.GetAll()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch companies"})
+		InternalServerError(c, "failed to fetch companies")
 		return
 	}
 
-	c.JSON(http.StatusOK, mapper.ToCompanyResponseList(companies))
+	OK(c, "companies retrieved successfully", mapper.ToCompanyResponseList(companies))
 }
 
 func (h *CompanyHandler) GetByID(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid company id"})
+		BadRequest(c, "invalid company id")
 		return
 	}
 
 	company, err := h.companyService.GetByID(id)
 	if err != nil {
 		if errors.Is(err, service.ErrCompanyNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			NotFound(c, err.Error())
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch company"})
+		InternalServerError(c, "failed to fetch company")
 		return
 	}
 
-	c.JSON(http.StatusOK, mapper.ToCompanyResponse(company))
+	OK(c, "company retrieved successfully", mapper.ToCompanyResponse(company))
 }
 
 func (h *CompanyHandler) Update(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid company id"})
+		BadRequest(c, "invalid company id")
 		return
 	}
 
 	var req dto.UpdateCompanyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		BadRequest(c, "invalid request body")
 		return
 	}
 
 	if err := h.validate.Struct(req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{"errors": formatValidationErrors(err)})
+		ValidationError(c, formatValidationErrors(err))
 		return
 	}
 
 	company, err := h.companyService.Update(id, req)
 	if err != nil {
 		if errors.Is(err, service.ErrCompanyNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			NotFound(c, err.Error())
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update company"})
+		InternalServerError(c, "failed to update company")
 		return
 	}
 
-	c.JSON(http.StatusOK, mapper.ToCompanyResponse(company))
+	OK(c, "company updated successfully", mapper.ToCompanyResponse(company))
 }
 
 func (h *CompanyHandler) Delete(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid company id"})
+		BadRequest(c, "invalid company id")
 		return
 	}
 
 	if err := h.companyService.Delete(id); err != nil {
 		if errors.Is(err, service.ErrCompanyNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			NotFound(c, err.Error())
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete company"})
+		InternalServerError(c, "failed to delete company")
 		return
 	}
 
-	c.JSON(http.StatusNoContent, nil)
+	NoContent(c)
 }
