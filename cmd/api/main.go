@@ -20,6 +20,7 @@ func main() {
 	// 2. Database
 	db := database.Connect(cfg)
 	database.Migrate(db)
+	database.Seed(db, cfg)
 
 	sqlDB, err := db.DB()
 	if err != nil {
