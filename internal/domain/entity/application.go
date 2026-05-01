@@ -7,6 +7,8 @@ import (
 	"gorm.io/gorm"
 )
 
+type ApplicationStatus string
+
 const (
 	StatusApplied   ApplicationStatus = "applied"
 	StatusScreening ApplicationStatus = "screening"
