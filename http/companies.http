@@ -63,6 +63,66 @@ Authorization: Bearer {{adminToken}}
   "name": "Incomplete Co"
 }
 
+### ─────────────────────────────────────────
+### Create Company: GreenAgro Solutions (expect 201)
+### ─────────────────────────────────────────
+POST {{baseUrl}}/companies
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "name": "GreenAgro Solutions",
+  "description": "Innovating sustainable farming practices and organic exports.",
+  "industry": "Agriculture",
+  "website": "https://greenagro.lk",
+  "location": "Kandy, Sri Lanka"
+}
+
+### ─────────────────────────────────────────
+### Create Company: BlueOcean Logistics (expect 201)
+### ─────────────────────────────────────────
+POST {{baseUrl}}/companies
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "name": "BlueOcean Logistics",
+  "description": "Global freight forwarding and supply chain management experts.",
+  "industry": "Logistics",
+  "website": "https://blueoceanlogistics.com",
+  "location": "Hambantota, Sri Lanka"
+}
+
+### ─────────────────────────────────────────
+### Create Company: Ceylon Stay Resorts (expect 201)
+### ─────────────────────────────────────────
+POST {{baseUrl}}/companies
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "name": "Ceylon Stay Resorts",
+  "description": "A luxury boutique hotel chain focusing on eco-tourism.",
+  "industry": "Hospitality",
+  "website": "https://ceylonstay.com",
+  "location": "Galle, Sri Lanka"
+}
+
+### ─────────────────────────────────────────
+### Create Company: PayHere Lanka (expect 201)
+### ─────────────────────────────────────────
+POST {{baseUrl}}/companies
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "name": "PayHere Lanka",
+  "description": "Sri Lanka's leading authorized payment aggregator for online businesses.",
+  "industry": "Fintech",
+  "website": "https://payhere.lk",
+  "location": "Nugegoda, Sri Lanka"
+}
+
 
 ### ─────────────────────────────────────────
 ### Get all companies (public — expect 200)
