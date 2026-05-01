@@ -19,6 +19,7 @@ func newJobService(jobRepo *mocks.MockJobRepo, companyRepo *mocks.MockCompanyRep
 
 // ── Close ──────────────────────────────────────────────────────────────────
 
+// Recruiter can close their open job
 func TestClose_Success(t *testing.T) {
 	jobRepo := new(mocks.MockJobRepo)
 	companyRepo := new(mocks.MockCompanyRepo)
@@ -44,6 +45,7 @@ func TestClose_Success(t *testing.T) {
 	jobRepo.AssertExpectations(t)
 }
 
+// Cannot close an already closed job
 func TestClose_AlreadyClosed(t *testing.T) {
 	jobRepo := new(mocks.MockJobRepo)
 	companyRepo := new(mocks.MockCompanyRepo)
@@ -66,6 +68,7 @@ func TestClose_AlreadyClosed(t *testing.T) {
 	jobRepo.AssertNotCalled(t, "Update")
 }
 
+// Only the poster can close a job
 func TestClose_UnauthorizedRecruiter(t *testing.T) {
 	jobRepo := new(mocks.MockJobRepo)
 	companyRepo := new(mocks.MockCompanyRepo)
@@ -89,6 +92,7 @@ func TestClose_UnauthorizedRecruiter(t *testing.T) {
 	jobRepo.AssertNotCalled(t, "Update")
 }
 
+// Returns correct error for missing job
 func TestClose_JobNotFound(t *testing.T) {
 	jobRepo := new(mocks.MockJobRepo)
 	companyRepo := new(mocks.MockCompanyRepo)
@@ -104,6 +108,7 @@ func TestClose_JobNotFound(t *testing.T) {
 
 // ── Delete ─────────────────────────────────────────────────────────────────
 
+// Recruiter can delete their own job
 func TestDeleteJob_Success(t *testing.T) {
 	jobRepo := new(mocks.MockJobRepo)
 	companyRepo := new(mocks.MockCompanyRepo)
@@ -126,6 +131,7 @@ func TestDeleteJob_Success(t *testing.T) {
 	jobRepo.AssertExpectations(t)
 }
 
+// Cannot delete someone else's job
 func TestDeleteJob_Unauthorized(t *testing.T) {
 	jobRepo := new(mocks.MockJobRepo)
 	companyRepo := new(mocks.MockCompanyRepo)
@@ -150,6 +156,7 @@ func TestDeleteJob_Unauthorized(t *testing.T) {
 
 // ── Update ─────────────────────────────────────────────────────────────────
 
+// Job fields update correctly
 func TestUpdateJob_Success(t *testing.T) {
 	jobRepo := new(mocks.MockJobRepo)
 	companyRepo := new(mocks.MockCompanyRepo)

@@ -21,6 +21,7 @@ func newAppService(appRepo *mocks.MockAppRepo, jobRepo *mocks.MockJobRepo) *serv
 
 // ── Apply ──────────────────────────────────────────────────────────────────
 
+// Happy path — application created with applied status
 func TestApply_Success(t *testing.T) {
 	appRepo := new(mocks.MockAppRepo)
 	jobRepo := new(mocks.MockJobRepo)
@@ -61,6 +62,7 @@ func TestApply_Success(t *testing.T) {
 	appRepo.AssertExpectations(t)
 }
 
+// Cannot apply to non-existent job
 func TestApply_JobNotFound(t *testing.T) {
 	appRepo := new(mocks.MockAppRepo)
 	jobRepo := new(mocks.MockJobRepo)
@@ -79,6 +81,7 @@ func TestApply_JobNotFound(t *testing.T) {
 	appRepo.AssertNotCalled(t, "Create")
 }
 
+// Cannot apply to a closed job
 func TestApply_JobClosed(t *testing.T) {
 	appRepo := new(mocks.MockAppRepo)
 	jobRepo := new(mocks.MockJobRepo)
@@ -100,6 +103,7 @@ func TestApply_JobClosed(t *testing.T) {
 	appRepo.AssertNotCalled(t, "Create")
 }
 
+// Cannot apply to the same job twice
 func TestApply_AlreadyApplied(t *testing.T) {
 	appRepo := new(mocks.MockAppRepo)
 	jobRepo := new(mocks.MockJobRepo)
@@ -123,6 +127,7 @@ func TestApply_AlreadyApplied(t *testing.T) {
 
 // ── UpdateStatus ───────────────────────────────────────────────────────────
 
+// Recruiter can advance pipeline stage
 func TestUpdateStatus_Success(t *testing.T) {
 	appRepo := new(mocks.MockAppRepo)
 	jobRepo := new(mocks.MockJobRepo)
@@ -150,6 +155,7 @@ func TestUpdateStatus_Success(t *testing.T) {
 	appRepo.AssertExpectations(t)
 }
 
+// Only the job's poster can update status
 func TestUpdateStatus_UnauthorizedRecruiter(t *testing.T) {
 	appRepo := new(mocks.MockAppRepo)
 	jobRepo := new(mocks.MockJobRepo)
@@ -175,6 +181,7 @@ func TestUpdateStatus_UnauthorizedRecruiter(t *testing.T) {
 	appRepo.AssertNotCalled(t, "Update")
 }
 
+// Returns correct error for missing application
 func TestUpdateStatus_ApplicationNotFound(t *testing.T) {
 	appRepo := new(mocks.MockAppRepo)
 	jobRepo := new(mocks.MockJobRepo)
@@ -190,6 +197,7 @@ func TestUpdateStatus_ApplicationNotFound(t *testing.T) {
 
 // ── Withdraw ───────────────────────────────────────────────────────────────
 
+// Candidate can withdraw their own application
 func TestWithdraw_Success(t *testing.T) {
 	appRepo := new(mocks.MockAppRepo)
 	jobRepo := new(mocks.MockJobRepo)
@@ -212,6 +220,7 @@ func TestWithdraw_Success(t *testing.T) {
 	appRepo.AssertExpectations(t)
 }
 
+// Cannot withdraw someone else's application
 func TestWithdraw_NotOwner(t *testing.T) {
 	appRepo := new(mocks.MockAppRepo)
 	jobRepo := new(mocks.MockJobRepo)
