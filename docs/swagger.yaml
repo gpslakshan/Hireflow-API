@@ -35,6 +35,14 @@ definitions:
         example: cvs/da9d5716-4979-4f93-980a-9dfcf00cd02a/my-cv.pdf
         type: string
     type: object
+  dto.AssignCompanyRequest:
+    properties:
+      company_id:
+        example: a1b2c3d4-...
+        type: string
+    required:
+    - company_id
+    type: object
   dto.AuthResponse:
     properties:
       token:
@@ -1153,6 +1161,60 @@ paths:
       summary: Get a CV upload URL
       tags:
       - Uploads
+  /users/{id}/assign-company:
+    patch:
+      consumes:
+      - application/json
+      description: Links a recruiter account to a company. Admin only.
+      parameters:
+      - description: User UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Company to assign
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.AssignCompanyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/handler.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.UserResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.APIResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.APIResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.APIResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.APIResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/handler.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Assign a recruiter to a company
+      tags:
+      - Users
 securityDefinitions:
   BearerAuth:
     description: 'Enter your JWT token as: Bearer <token>'
