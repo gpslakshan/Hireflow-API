@@ -20,6 +20,22 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// @title           HireFlow API
+// @version         1.0
+// @description     A production-grade Job Recruitment REST API built with Go and Gin.
+
+// @contact.name    HireFlow Support
+// @contact.email   support@hireflow.com
+
+// @license.name    MIT
+
+// @host            localhost:8080
+// @BasePath        /api/v1
+
+// @securityDefinitions.apikey  BearerAuth
+// @in                          header
+// @name                        Authorization
+// @description                 Enter your JWT token as: Bearer <token>
 func main() {
 	// 1. Config
 	cfg := config.Load()
