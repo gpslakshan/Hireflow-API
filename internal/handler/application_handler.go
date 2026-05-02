@@ -23,6 +23,22 @@ func NewApplicationHandler(appService service.ApplicationServiceInterface) *Appl
 	}
 }
 
+// Apply godoc
+// @Summary      Apply to a job
+// @Description  Submit an application to an open job. Candidate only.
+// @Tags         Applications
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id       path      string               true  "Job UUID"
+// @Param        request  body      dto.ApplyJobRequest  true  "Cover letter"
+// @Success      201      {object}  handler.APIResponse{data=dto.ApplicationResponse}
+// @Failure      400      {object}  handler.APIResponse
+// @Failure      401      {object}  handler.APIResponse
+// @Failure      403      {object}  handler.APIResponse
+// @Failure      404      {object}  handler.APIResponse
+// @Failure      409      {object}  handler.APIResponse
+// @Router       /jobs/{id}/apply [post]
 func (h *ApplicationHandler) Apply(c *gin.Context) {
 	jobID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -65,6 +81,16 @@ func (h *ApplicationHandler) Apply(c *gin.Context) {
 	Created(c, "application submitted successfully", mapper.ToApplicationResponse(app, ""))
 }
 
+// GetMyApplications godoc
+// @Summary      My applications
+// @Description  Returns all applications submitted by the current candidate.
+// @Tags         Applications
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  handler.APIResponse{data=[]dto.ApplicationResponse}
+// @Failure      401  {object}  handler.APIResponse
+// @Failure      403  {object}  handler.APIResponse
+// @Router       /applications/my [get]
 func (h *ApplicationHandler) GetMyApplications(c *gin.Context) {
 	candidateID, err := extractUserID(c)
 	if err != nil {
@@ -81,6 +107,18 @@ func (h *ApplicationHandler) GetMyApplications(c *gin.Context) {
 	OK(c, "applications retrieved successfully", mapper.ToApplicationResponseList(apps, urls))
 }
 
+// GetByJob godoc
+// @Summary      Applications for a job
+// @Description  Lists all applications for a job. Only the recruiter who posted it.
+// @Tags         Applications
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path      string  true  "Job UUID"
+// @Success      200  {object}  handler.APIResponse{data=[]dto.ApplicationResponse}
+// @Failure      401  {object}  handler.APIResponse
+// @Failure      403  {object}  handler.APIResponse
+// @Failure      404  {object}  handler.APIResponse
+// @Router       /jobs/{id}/applications [get]
 func (h *ApplicationHandler) GetByJob(c *gin.Context) {
 	jobID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -110,6 +148,19 @@ func (h *ApplicationHandler) GetByJob(c *gin.Context) {
 	OK(c, "applications retrieved successfully", mapper.ToApplicationResponseList(apps, urls))
 }
 
+// GetByID godoc
+// @Summary      Get an application
+// @Description  Returns a single application. Candidate sees own only; recruiter sees their job's only.
+// @Tags         Applications
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path      string  true  "Application UUID"
+// @Success      200  {object}  handler.APIResponse{data=dto.ApplicationResponse}
+// @Failure      400  {object}  handler.APIResponse
+// @Failure      401  {object}  handler.APIResponse
+// @Failure      403  {object}  handler.APIResponse
+// @Failure      404  {object}  handler.APIResponse
+// @Router       /applications/{id} [get]
 func (h *ApplicationHandler) GetByID(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -141,6 +192,21 @@ func (h *ApplicationHandler) GetByID(c *gin.Context) {
 	OK(c, "application retrieved successfully", mapper.ToApplicationResponse(app, downloadURL))
 }
 
+// UpdateStatus godoc
+// @Summary      Update application status
+// @Description  Advances or rejects an application in the pipeline. Recruiter only.
+// @Tags         Applications
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id       path      string                                  true  "Application UUID"
+// @Param        request  body      dto.UpdateApplicationStatusRequest      true  "New status"
+// @Success      200      {object}  handler.APIResponse{data=dto.ApplicationResponse}
+// @Failure      400      {object}  handler.APIResponse
+// @Failure      401      {object}  handler.APIResponse
+// @Failure      403      {object}  handler.APIResponse
+// @Failure      404      {object}  handler.APIResponse
+// @Router       /applications/{id}/status [patch]
 func (h *ApplicationHandler) UpdateStatus(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -181,6 +247,19 @@ func (h *ApplicationHandler) UpdateStatus(c *gin.Context) {
 	OK(c, "application status updated successfully", mapper.ToApplicationResponse(app, ""))
 }
 
+// Withdraw godoc
+// @Summary      Withdraw an application
+// @Description  Permanently removes the candidate's application. Candidate only.
+// @Tags         Applications
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path      string  true  "Application UUID"
+// @Success      204  "No Content"
+// @Failure      400  {object}  handler.APIResponse
+// @Failure      401  {object}  handler.APIResponse
+// @Failure      403  {object}  handler.APIResponse
+// @Failure      404  {object}  handler.APIResponse
+// @Router       /applications/{id} [delete]
 func (h *ApplicationHandler) Withdraw(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {

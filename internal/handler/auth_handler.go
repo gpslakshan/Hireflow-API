@@ -22,6 +22,18 @@ func NewAuthHandler(authService service.AuthServiceInterface) *AuthHandler {
 	}
 }
 
+// Register godoc
+// @Summary      Register a new user
+// @Description  Creates a new candidate or recruiter account
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        request  body      dto.RegisterRequest  true  "Registration details"
+// @Success      201      {object}  handler.APIResponse{data=dto.UserResponse}
+// @Failure      400      {object}  handler.APIResponse
+// @Failure      409      {object}  handler.APIResponse
+// @Failure      422      {object}  handler.APIResponse{errors=map[string]string}
+// @Router       /auth/register [post]
 func (h *AuthHandler) Register(c *gin.Context) {
 	var req dto.RegisterRequest
 
@@ -48,6 +60,18 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	Created(c, "user registered successfully", mapper.ToUserResponse(user))
 }
 
+// Login godoc
+// @Summary      Login
+// @Description  Authenticate with email and password, receive a JWT token
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        request  body      dto.LoginRequest  true  "Login credentials"
+// @Success      200      {object}  handler.APIResponse{data=dto.AuthResponse}
+// @Failure      400      {object}  handler.APIResponse
+// @Failure      401      {object}  handler.APIResponse
+// @Failure      422      {object}  handler.APIResponse{errors=map[string]string}
+// @Router       /auth/login [post]
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req dto.LoginRequest
 
@@ -77,6 +101,16 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	})
 }
 
+// Me godoc
+// @Summary      Get current user
+// @Description  Returns the profile of the currently authenticated user
+// @Tags         Auth
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  handler.APIResponse{data=dto.UserResponse}
+// @Failure      401  {object}  handler.APIResponse
+// @Failure      404  {object}  handler.APIResponse
+// @Router       /auth/me [get]
 func (h *AuthHandler) Me(c *gin.Context) {
 	userID, _ := c.Get("user_id")
 

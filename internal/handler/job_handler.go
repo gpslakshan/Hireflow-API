@@ -23,6 +23,22 @@ func NewJobHandler(jobService service.JobServiceInterface) *JobHandler {
 	}
 }
 
+// Create godoc
+// @Summary      Post a job
+// @Description  Creates a job under a company. Recruiter only.
+// @Tags         Jobs
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id       path      string                 true  "Company UUID"
+// @Param        request  body      dto.CreateJobRequest   true  "Job details"
+// @Success      201      {object}  handler.APIResponse{data=dto.JobResponse}
+// @Failure      400      {object}  handler.APIResponse
+// @Failure      401      {object}  handler.APIResponse
+// @Failure      403      {object}  handler.APIResponse
+// @Failure      404      {object}  handler.APIResponse
+// @Failure      422      {object}  handler.APIResponse{errors=map[string]string}
+// @Router       /companies/{id}/jobs [post]
 func (h *JobHandler) Create(c *gin.Context) {
 	companyID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -60,6 +76,14 @@ func (h *JobHandler) Create(c *gin.Context) {
 	Created(c, "job created successfully", mapper.ToJobResponse(job))
 }
 
+// GetAll godoc
+// @Summary      List open jobs
+// @Description  Returns all open job postings. Public endpoint.
+// @Tags         Jobs
+// @Produce      json
+// @Success      200  {object}  handler.APIResponse{data=[]dto.JobResponse}
+// @Failure      500  {object}  handler.APIResponse
+// @Router       /jobs [get]
 func (h *JobHandler) GetAll(c *gin.Context) {
 	jobs, err := h.jobService.GetAll()
 	if err != nil {
@@ -70,6 +94,16 @@ func (h *JobHandler) GetAll(c *gin.Context) {
 	OK(c, "jobs retrieved successfully", mapper.ToJobResponseList(jobs))
 }
 
+// GetByID godoc
+// @Summary      Get a job
+// @Description  Returns a single job posting by ID. Public endpoint.
+// @Tags         Jobs
+// @Produce      json
+// @Param        id   path      string  true  "Job UUID"
+// @Success      200  {object}  handler.APIResponse{data=dto.JobResponse}
+// @Failure      400  {object}  handler.APIResponse
+// @Failure      404  {object}  handler.APIResponse
+// @Router       /jobs/{id} [get]
 func (h *JobHandler) GetByID(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -90,6 +124,21 @@ func (h *JobHandler) GetByID(c *gin.Context) {
 	OK(c, "job retrieved successfully", mapper.ToJobResponse(job))
 }
 
+// Update godoc
+// @Summary      Update a job
+// @Description  Updates a job posting. Only the recruiter who posted it.
+// @Tags         Jobs
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id       path      string                true  "Job UUID"
+// @Param        request  body      dto.UpdateJobRequest  true  "Fields to update"
+// @Success      200      {object}  handler.APIResponse{data=dto.JobResponse}
+// @Failure      400      {object}  handler.APIResponse
+// @Failure      401      {object}  handler.APIResponse
+// @Failure      403      {object}  handler.APIResponse
+// @Failure      404      {object}  handler.APIResponse
+// @Router       /jobs/{id} [put]
 func (h *JobHandler) Update(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -130,6 +179,20 @@ func (h *JobHandler) Update(c *gin.Context) {
 	OK(c, "job updated successfully", mapper.ToJobResponse(job))
 }
 
+// Close godoc
+// @Summary      Close a job
+// @Description  Marks a job as closed. Only the recruiter who posted it.
+// @Tags         Jobs
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path      string  true  "Job UUID"
+// @Success      200  {object}  handler.APIResponse{data=dto.JobResponse}
+// @Failure      400  {object}  handler.APIResponse
+// @Failure      401  {object}  handler.APIResponse
+// @Failure      403  {object}  handler.APIResponse
+// @Failure      404  {object}  handler.APIResponse
+// @Failure      409  {object}  handler.APIResponse
+// @Router       /jobs/{id}/close [patch]
 func (h *JobHandler) Close(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -161,6 +224,19 @@ func (h *JobHandler) Close(c *gin.Context) {
 	OK(c, "job closed successfully", mapper.ToJobResponse(job))
 }
 
+// Delete godoc
+// @Summary      Delete a job
+// @Description  Deletes a job posting. Only the recruiter who posted it.
+// @Tags         Jobs
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path      string  true  "Job UUID"
+// @Success      204  "No Content"
+// @Failure      400  {object}  handler.APIResponse
+// @Failure      401  {object}  handler.APIResponse
+// @Failure      403  {object}  handler.APIResponse
+// @Failure      404  {object}  handler.APIResponse
+// @Router       /jobs/{id} [delete]
 func (h *JobHandler) Delete(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {

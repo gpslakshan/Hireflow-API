@@ -19,6 +19,22 @@ func NewUploadHandler(uploadService service.UploadServiceInterface) *UploadHandl
 	}
 }
 
+// GenerateCVUploadURL godoc
+// @Summary      Get a CV upload URL
+// @Description  Returns a pre-signed S3 URL for uploading a PDF CV directly to S3.
+//
+//	After uploading, include the returned cv_key when submitting an application.
+//
+// @Tags         Uploads
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        request  body      dto.CVUploadURLRequest  true  "File name"
+// @Success      200      {object}  handler.APIResponse{data=dto.CVUploadURLResponse}
+// @Failure      400      {object}  handler.APIResponse
+// @Failure      401      {object}  handler.APIResponse
+// @Failure      403      {object}  handler.APIResponse
+// @Router       /uploads/cv-upload-url [post]
 func (h *UploadHandler) GenerateCVUploadURL(c *gin.Context) {
 	candidateID, err := extractUserID(c)
 	if err != nil {

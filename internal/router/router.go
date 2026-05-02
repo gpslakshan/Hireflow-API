@@ -8,6 +8,10 @@ import (
 	"github.com/gpslakshan/hireflow/internal/config"
 	"github.com/gpslakshan/hireflow/internal/handler"
 	"github.com/gpslakshan/hireflow/internal/middleware"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+
+	_ "github.com/gpslakshan/hireflow/docs" // ← triggers docs.go init()
 )
 
 func Setup(
@@ -127,6 +131,8 @@ func Setup(
 			uploadHandler.GenerateCVUploadURL,
 		)
 	}
+
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	return r
 }
