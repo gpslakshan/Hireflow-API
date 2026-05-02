@@ -11,7 +11,9 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
-	_ "github.com/gpslakshan/hireflow/docs" // ← triggers docs.go init()
+	// Blank import triggers the generated docs init() function.
+	// Must live here alongside the Swagger route — not in handler files.
+	_ "github.com/gpslakshan/hireflow/docs"
 )
 
 func Setup(
@@ -21,6 +23,7 @@ func Setup(
 	jobHandler *handler.JobHandler,
 	appHandler *handler.ApplicationHandler,
 	uploadHandler *handler.UploadHandler,
+	userHandler *handler.UserHandler,
 ) *gin.Engine {
 	r := gin.New()
 
@@ -33,14 +36,18 @@ func Setup(
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
-		MaxAge:           12 * time.Hour, // how long browsers cache preflight responses
+		MaxAge:           12 * time.Hour,
 	}))
 
 	r.SetTrustedProxies([]string{"127.0.0.1"})
 
-	// ── Routes ────────────────────────────────────────────
+	// ── Swagger UI ─────────────────────────────────────────
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
+	// ── API v1 ─────────────────────────────────────────────
 	v1 := r.Group("/api/v1")
 
+	// ── Auth (public) ──────────────────────────────────────
 	auth := v1.Group("/auth")
 	{
 		auth.POST("/register", authHandler.Register)
@@ -48,6 +55,17 @@ func Setup(
 		auth.GET("/me", middleware.AuthMiddleware(cfg), authHandler.Me)
 	}
 
+	// ── Users ──────────────────────────────────────────────
+	users := v1.Group("/users")
+	users.Use(middleware.AuthMiddleware(cfg))
+	{
+		users.PATCH("/:id/assign-company",
+			middleware.RequireRole("admin"),
+			userHandler.AssignCompany,
+		)
+	}
+
+	// ── Companies ──────────────────────────────────────────
 	companies := v1.Group("/companies")
 	{
 		companies.GET("", companyHandler.GetAll)
@@ -67,6 +85,7 @@ func Setup(
 			middleware.RequireRole("admin"),
 			companyHandler.Delete,
 		)
+		// POST /companies/:id/jobs
 		companies.POST("/:id/jobs",
 			middleware.AuthMiddleware(cfg),
 			middleware.RequireRole("recruiter"),
@@ -74,6 +93,7 @@ func Setup(
 		)
 	}
 
+	// ── Jobs ───────────────────────────────────────────────
 	jobs := v1.Group("/jobs")
 	{
 		jobs.GET("", jobHandler.GetAll)
@@ -93,11 +113,13 @@ func Setup(
 			middleware.RequireRole("recruiter"),
 			jobHandler.Delete,
 		)
+		// POST /jobs/:id/apply
 		jobs.POST("/:id/apply",
 			middleware.AuthMiddleware(cfg),
 			middleware.RequireRole("candidate"),
 			appHandler.Apply,
 		)
+		// GET /jobs/:id/applications
 		jobs.GET("/:id/applications",
 			middleware.AuthMiddleware(cfg),
 			middleware.RequireRole("recruiter"),
@@ -105,6 +127,7 @@ func Setup(
 		)
 	}
 
+	// ── Applications ───────────────────────────────────────
 	applications := v1.Group("/applications")
 	applications.Use(middleware.AuthMiddleware(cfg))
 	{
@@ -123,6 +146,7 @@ func Setup(
 		)
 	}
 
+	// ── Uploads ────────────────────────────────────────────
 	uploads := v1.Group("/uploads")
 	uploads.Use(middleware.AuthMiddleware(cfg))
 	{
@@ -132,13 +156,12 @@ func Setup(
 		)
 	}
 
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-
 	return r
 }
 
 // getAllowedOrigins returns CORS origins based on environment.
-// In development we allow localhost. In production only real domains.
+// In development we allow common localhost ports.
+// In production only real domains are allowed.
 func getAllowedOrigins(cfg *config.Config) []string {
 	if cfg.AppEnv == "production" {
 		return []string{
