@@ -43,3 +43,7 @@ type ApplicationServiceInterface interface {
 type UploadServiceInterface interface {
 	GenerateCVUploadURL(ctx context.Context, candidateID string, fileName string) (dto.CVUploadURLResponse, error)
 }
+
+type UserServiceInterface interface {
+	AssignCompany(userID string, req dto.AssignCompanyRequest) (entity.User, error)
+}

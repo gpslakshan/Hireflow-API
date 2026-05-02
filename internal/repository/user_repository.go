@@ -34,3 +34,7 @@ func (r *UserRepository) FindByID(id string) (*entity.User, error) {
 	}
 	return &user, nil
 }
+
+func (r *UserRepository) Update(user *entity.User) error {
+	return r.db.Save(user).Error
+}
