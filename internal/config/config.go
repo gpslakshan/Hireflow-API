@@ -25,6 +25,13 @@ type Config struct {
 
 	AdminEmail    string
 	AdminPassword string
+
+	AWSAccessKeyID          string
+	AWSSecretAccessKey      string
+	AWSRegion               string
+	AWSS3Bucket             string
+	CVUploadURLExpiryMins   string
+	CVDownloadURLExpiryMins string
 }
 
 // Load reads the .env file and returns a populated Config struct.
@@ -51,6 +58,13 @@ func Load() *Config {
 
 		AdminEmail:    getEnv("ADMIN_EMAIL", "admin@hireflow.com"),
 		AdminPassword: getEnv("ADMIN_PASSWORD", ""),
+
+		AWSAccessKeyID:          getEnv("AWS_ACCESS_KEY_ID", ""),
+		AWSSecretAccessKey:      getEnv("AWS_SECRET_ACCESS_KEY", ""),
+		AWSRegion:               getEnv("AWS_REGION", "ap-south-1"),
+		AWSS3Bucket:             getEnv("AWS_S3_BUCKET", ""),
+		CVUploadURLExpiryMins:   getEnv("CV_UPLOAD_URL_EXPIRY_MINUTES", "15"),
+		CVDownloadURLExpiryMins: getEnv("CV_DOWNLOAD_URL_EXPIRY_MINUTES", "15"),
 	}
 }
 
