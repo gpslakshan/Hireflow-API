@@ -283,7 +283,7 @@ All routes are prefixed with `/api/v1`.
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/yourusername/hireflow.git
+git clone https://github.com/gpslakshan/Hireflow-API.git
 cd hireflow
 ```
 
