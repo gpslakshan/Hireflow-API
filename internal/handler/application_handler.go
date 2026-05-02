@@ -62,7 +62,7 @@ func (h *ApplicationHandler) Apply(c *gin.Context) {
 		return
 	}
 
-	Created(c, "application submitted successfully", mapper.ToApplicationResponse(app))
+	Created(c, "application submitted successfully", mapper.ToApplicationResponse(app, ""))
 }
 
 func (h *ApplicationHandler) GetMyApplications(c *gin.Context) {
@@ -72,13 +72,13 @@ func (h *ApplicationHandler) GetMyApplications(c *gin.Context) {
 		return
 	}
 
-	apps, err := h.appService.GetMyApplications(candidateID)
+	apps, urls, err := h.appService.GetMyApplications(candidateID)
 	if err != nil {
 		InternalServerError(c, "failed to fetch applications")
 		return
 	}
 
-	OK(c, "applications retrieved successfully", mapper.ToApplicationResponseList(apps))
+	OK(c, "applications retrieved successfully", mapper.ToApplicationResponseList(apps, urls))
 }
 
 func (h *ApplicationHandler) GetByJob(c *gin.Context) {
@@ -94,7 +94,7 @@ func (h *ApplicationHandler) GetByJob(c *gin.Context) {
 		return
 	}
 
-	apps, err := h.appService.GetByJob(jobID, recruiterID)
+	apps, urls, err := h.appService.GetByJob(jobID, recruiterID)
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrJobNotFound):
@@ -107,7 +107,7 @@ func (h *ApplicationHandler) GetByJob(c *gin.Context) {
 		return
 	}
 
-	OK(c, "applications retrieved successfully", mapper.ToApplicationResponseList(apps))
+	OK(c, "applications retrieved successfully", mapper.ToApplicationResponseList(apps, urls))
 }
 
 func (h *ApplicationHandler) GetByID(c *gin.Context) {
@@ -125,7 +125,7 @@ func (h *ApplicationHandler) GetByID(c *gin.Context) {
 
 	role, _ := c.Get("role")
 
-	app, err := h.appService.GetByID(id, userID, role.(string))
+	app, downloadURL, err := h.appService.GetByID(id, userID, role.(string))
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrApplicationNotFound):
@@ -138,7 +138,7 @@ func (h *ApplicationHandler) GetByID(c *gin.Context) {
 		return
 	}
 
-	OK(c, "application retrieved successfully", mapper.ToApplicationResponse(app))
+	OK(c, "application retrieved successfully", mapper.ToApplicationResponse(app, downloadURL))
 }
 
 func (h *ApplicationHandler) UpdateStatus(c *gin.Context) {
@@ -178,7 +178,7 @@ func (h *ApplicationHandler) UpdateStatus(c *gin.Context) {
 		return
 	}
 
-	OK(c, "application status updated successfully", mapper.ToApplicationResponse(app))
+	OK(c, "application status updated successfully", mapper.ToApplicationResponse(app, ""))
 }
 
 func (h *ApplicationHandler) Withdraw(c *gin.Context) {
