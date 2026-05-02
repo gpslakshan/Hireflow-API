@@ -16,6 +16,7 @@ import (
 	"github.com/gpslakshan/hireflow/internal/repository"
 	"github.com/gpslakshan/hireflow/internal/router"
 	"github.com/gpslakshan/hireflow/internal/service"
+	"github.com/gpslakshan/hireflow/internal/storage"
 	"github.com/rs/zerolog/log"
 )
 
@@ -46,26 +47,36 @@ func main() {
 		gin.SetMode(gin.DebugMode)
 	}
 
-	// 5. Wire dependencies
+	// ── 5. Storage ───────────────────────────────────────────
+	s3Storage, err := storage.NewS3Storage(cfg)
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to initialise S3 storage")
+	}
+
+	// 6. Repositories
 	userRepo := repository.NewUserRepository(db)
 	companyRepo := repository.NewCompanyRepository(db)
 	jobRepo := repository.NewJobRepository(db)
 	appRepo := repository.NewApplicationRepository(db)
 
+	// 7. Services
 	authService := service.NewAuthService(userRepo, cfg)
 	companyService := service.NewCompanyService(companyRepo)
 	jobService := service.NewJobService(jobRepo, companyRepo)
-	appService := service.NewApplicationService(appRepo, jobRepo)
+	appService := service.NewApplicationService(appRepo, jobRepo, s3Storage)
+	uploadService := service.NewUploadService(s3Storage)
 
+	// 8. Handlers
 	authHandler := handler.NewAuthHandler(authService)
 	companyHandler := handler.NewCompanyHandler(companyService)
 	jobHandler := handler.NewJobHandler(jobService)
 	appHandler := handler.NewApplicationHandler(appService)
+	uploadHandler := handler.NewUploadHandler(uploadService)
 
-	// 6. Router
-	r := router.Setup(cfg, authHandler, companyHandler, jobHandler, appHandler)
+	// 9. Router
+	r := router.Setup(cfg, authHandler, companyHandler, jobHandler, appHandler, uploadHandler)
 
-	// 7. Build http.Server manually so we can shut it down gracefully
+	// 10. HTTP server
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%s", cfg.AppPort),
 		Handler:      r,
@@ -74,7 +85,9 @@ func main() {
 		IdleTimeout:  60 * time.Second, // max time for keep-alive connections
 	}
 
-	// 8. Start server in a goroutine so it doesn't block the shutdown logic
+	// ── 11. Start in goroutine ───────────────────────────────
+	// Run in background so the main goroutine can listen for
+	// shutdown signals without blocking.
 	go func() {
 		log.Info().Msgf("server starting on port %s", cfg.AppPort)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -82,14 +95,15 @@ func main() {
 		}
 	}()
 
-	// 9. Block until we receive a termination signal (Ctrl+C or kill)
+	// ── 12. Graceful shutdown ────────────────────────────────
+	// Block until SIGINT (Ctrl+C) or SIGTERM (Docker / Kubernetes)
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
 	log.Info().Msg("shutting down server...")
 
-	// 10. Give in-flight requests 10 seconds to complete
+	// Give in-flight requests 10 seconds to complete
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
