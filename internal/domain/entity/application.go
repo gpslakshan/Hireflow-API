@@ -25,6 +25,7 @@ type Application struct {
 	CandidateID uuid.UUID         `gorm:"type:uuid;not null;index"`
 	Candidate   User              `gorm:"foreignKey:CandidateID"`
 	CoverLetter string            `gorm:"type:text"`
+	CVKey       string            `gorm:"type:varchar(500)"` // ← S3 object key
 	Status      ApplicationStatus `gorm:"type:varchar(20);not null;default:'applied'"`
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
