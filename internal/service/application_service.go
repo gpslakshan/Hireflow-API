@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -8,6 +9,7 @@ import (
 	"github.com/gpslakshan/hireflow/internal/domain/dto"
 	"github.com/gpslakshan/hireflow/internal/domain/entity"
 	"github.com/gpslakshan/hireflow/internal/repository"
+	"github.com/gpslakshan/hireflow/internal/storage"
 )
 
 var (
@@ -18,15 +20,21 @@ var (
 )
 
 type ApplicationService struct {
-	appRepo repository.AppRepo
-	jobRepo repository.JobRepo
+	appRepo   repository.AppRepo
+	jobRepo   repository.JobRepo
+	cvStorage storage.CVStorage
 }
 
 func NewApplicationService(
 	appRepo repository.AppRepo,
 	jobRepo repository.JobRepo,
+	cvStorage storage.CVStorage,
 ) *ApplicationService {
-	return &ApplicationService{appRepo: appRepo, jobRepo: jobRepo}
+	return &ApplicationService{
+		appRepo:   appRepo,
+		jobRepo:   jobRepo,
+		cvStorage: cvStorage,
+	}
 }
 
 func (s *ApplicationService) Apply(jobID uuid.UUID, candidateID uuid.UUID, req dto.ApplyJobRequest) (entity.Application, error) {
@@ -52,6 +60,7 @@ func (s *ApplicationService) Apply(jobID uuid.UUID, candidateID uuid.UUID, req d
 		JobID:       jobID,
 		CandidateID: candidateID,
 		CoverLetter: req.CoverLetter,
+		CVKey:       req.CVKey,
 		Status:      entity.StatusApplied,
 	}
 
@@ -68,41 +77,62 @@ func (s *ApplicationService) Apply(jobID uuid.UUID, candidateID uuid.UUID, req d
 	return *created, nil
 }
 
-func (s *ApplicationService) GetMyApplications(candidateID uuid.UUID) ([]entity.Application, error) {
-	return s.appRepo.FindByCandidate(candidateID)
-}
-
-func (s *ApplicationService) GetByJob(jobID uuid.UUID, recruiterID uuid.UUID) ([]entity.Application, error) {
-	// Business rule: only the recruiter who posted the job can see its applications
-	job, err := s.jobRepo.FindByID(jobID)
+func (s *ApplicationService) GetMyApplications(candidateID uuid.UUID) ([]entity.Application, []string, error) {
+	apps, err := s.appRepo.FindByCandidate(candidateID)
 	if err != nil {
-		return nil, ErrJobNotFound
+		return nil, nil, err
 	}
 
-	if job.PostedBy != recruiterID {
-		return nil, ErrUnauthorizedJob
+	urls := make([]string, len(apps))
+	for i := range apps {
+		urls[i] = s.enrichWithDownloadURL(context.Background(), &apps[i])
 	}
-
-	return s.appRepo.FindByJob(jobID)
+	return apps, urls, nil
 }
 
-func (s *ApplicationService) GetByID(id uuid.UUID, userID uuid.UUID, role string) (entity.Application, error) {
+func (s *ApplicationService) GetByJob(jobID uuid.UUID, recruiterID uuid.UUID) ([]entity.Application, []string, error) {
+	job, err := s.jobRepo.FindByID(jobID)
+
+	if err != nil {
+		return nil, nil, ErrJobNotFound
+	}
+
+	// Business rule: only the recruiter who posted the job can see its applications
+	if job.PostedBy != recruiterID {
+		return nil, nil, ErrUnauthorizedJob
+	}
+
+	apps, err := s.appRepo.FindByJob(jobID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	urls := make([]string, len(apps))
+	for i := range apps {
+		urls[i] = s.enrichWithDownloadURL(context.Background(), &apps[i])
+	}
+
+	return apps, urls, nil
+}
+
+func (s *ApplicationService) GetByID(id uuid.UUID, userID uuid.UUID, role string) (entity.Application, string, error) {
 	app, err := s.appRepo.FindByID(id)
 	if err != nil {
-		return entity.Application{}, ErrApplicationNotFound
+		return entity.Application{}, "", ErrApplicationNotFound
 	}
 
 	// Business rule: candidate can only see their own application
-	// Recruiter can only see applications for jobs they posted
 	if role == string(entity.RoleCandidate) && app.CandidateID != userID {
-		return entity.Application{}, ErrUnauthorizedApplication
+		return entity.Application{}, "", ErrUnauthorizedApplication
 	}
 
+	// Business rule: Recruiter can only see applications for jobs they posted
 	if role == string(entity.RoleRecruiter) && app.Job.PostedBy != userID {
-		return entity.Application{}, ErrUnauthorizedApplication
+		return entity.Application{}, "", ErrUnauthorizedApplication
 	}
 
-	return *app, nil
+	downloadURL := s.enrichWithDownloadURL(context.Background(), app)
+	return *app, downloadURL, nil
 }
 
 func (s *ApplicationService) UpdateStatus(id uuid.UUID, recruiterID uuid.UUID, req dto.UpdateApplicationStatusRequest) (entity.Application, error) {
@@ -130,11 +160,28 @@ func (s *ApplicationService) Withdraw(id uuid.UUID, candidateID uuid.UUID) error
 	if err != nil {
 		return ErrApplicationNotFound
 	}
-
-	// Business rule: candidates can only withdraw their own applications
 	if app.CandidateID != candidateID {
 		return ErrUnauthorizedApplication
 	}
 
+	// Clean up S3 object if a CV was uploaded
+	if app.CVKey != "" {
+		// Best-effort delete — don't fail the withdrawal if S3 delete fails
+		_ = s.cvStorage.DeleteObject(context.Background(), app.CVKey)
+	}
+
 	return s.appRepo.Delete(id)
+}
+
+// enrichWithDownloadURL generates a fresh S3 download URL for an application
+// that has a CV. Returns the key to use in the mapper.
+func (s *ApplicationService) enrichWithDownloadURL(ctx context.Context, app *entity.Application) string {
+	if app.CVKey == "" {
+		return ""
+	}
+	url, err := s.cvStorage.GenerateDownloadURL(ctx, app.CVKey)
+	if err != nil {
+		return ""
+	}
+	return url
 }
