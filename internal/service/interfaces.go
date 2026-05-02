@@ -33,9 +33,9 @@ type JobServiceInterface interface {
 
 type ApplicationServiceInterface interface {
 	Apply(jobID uuid.UUID, candidateID uuid.UUID, req dto.ApplyJobRequest) (entity.Application, error)
-	GetMyApplications(candidateID uuid.UUID) ([]entity.Application, error)
-	GetByJob(jobID uuid.UUID, recruiterID uuid.UUID) ([]entity.Application, error)
-	GetByID(id uuid.UUID, userID uuid.UUID, role string) (entity.Application, error)
+	GetMyApplications(candidateID uuid.UUID) ([]entity.Application, []string, error)
+	GetByJob(jobID uuid.UUID, recruiterID uuid.UUID) ([]entity.Application, []string, error)
+	GetByID(id uuid.UUID, userID uuid.UUID, role string) (entity.Application, string, error)
 	UpdateStatus(id uuid.UUID, recruiterID uuid.UUID, req dto.UpdateApplicationStatusRequest) (entity.Application, error)
 	Withdraw(id uuid.UUID, candidateID uuid.UUID) error
 }
