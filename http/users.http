@@ -1,0 +1,77 @@
+### Variables
+@baseUrl = http://localhost:8080/api/v1
+@adminToken = <paste_admin_token_here>
+@recruiterToken = <paste_recruiter_token_here>
+@recruiterId = <paste_recruiter_user_id_here>
+@companyId = <paste_company_id_here>
+
+
+### ─────────────────────────────────────────
+### Assign recruiter to company (admin — expect 200)
+### ─────────────────────────────────────────
+PATCH {{baseUrl}}/users/{{recruiterId}}/assign-company
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "company_id": "{{companyId}}"
+}
+
+
+### ─────────────────────────────────────────
+### Assign again — already assigned (expect 409)
+### ─────────────────────────────────────────
+PATCH {{baseUrl}}/users/{{recruiterId}}/assign-company
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "company_id": "{{companyId}}"
+}
+
+
+### ─────────────────────────────────────────
+### Assign a candidate — not a recruiter (expect 400)
+### ─────────────────────────────────────────
+PATCH {{baseUrl}}/users/<candidate_id>/assign-company
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "company_id": "{{companyId}}"
+}
+
+
+### ─────────────────────────────────────────
+### Assign non-existent company (expect 404)
+### ─────────────────────────────────────────
+PATCH {{baseUrl}}/users/{{recruiterId}}/assign-company
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "company_id": "00000000-0000-0000-0000-000000000000"
+}
+
+
+### ─────────────────────────────────────────
+### Assign — recruiter tries (expect 403)
+### ─────────────────────────────────────────
+PATCH {{baseUrl}}/users/{{recruiterId}}/assign-company
+Content-Type: application/json
+Authorization: Bearer {{recruiterToken}}
+
+{
+  "company_id": "{{companyId}}"
+}
+
+
+### ─────────────────────────────────────────
+### Assign — no token (expect 401)
+### ─────────────────────────────────────────
+PATCH {{baseUrl}}/users/{{recruiterId}}/assign-company
+Content-Type: application/json
+
+{
+  "company_id": "{{companyId}}"
+}
