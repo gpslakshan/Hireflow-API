@@ -1,6 +1,6 @@
 # HireFlow API
 
-A production-grade **Job Recruitment REST API** built with Go, following Clean Architecture principles. Companies post jobs, candidates apply with CVs, and recruiters manage hiring pipelines — all secured with JWT-based role-based access control.
+A production-grade **Job Recruitment REST API** built with Go, following Clean Architecture principles. Companies post jobs, candidates apply with CVs, and recruiters manage hiring pipelines — all secured with JWT-based role-based access control. Built by Sachin
 
 ---
 
