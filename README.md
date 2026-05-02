@@ -16,6 +16,7 @@ A production-grade **Job Recruitment REST API** built with Go, following Clean A
 - [Getting Started](#getting-started)
 - [Environment Variables](#environment-variables)
 - [CV Upload Flow](#cv-upload-flow)
+- [API Documentation](#api-documentation)
 - [Running Tests](#running-tests)
 - [Application Pipeline](#application-pipeline)
 
@@ -32,32 +33,35 @@ HireFlow is a backend REST API that powers a job recruitment platform. It suppor
 - CV upload via AWS S3 pre-signed URLs — server never touches binary files
 - Pre-signed download URLs generated fresh on every application fetch
 - Automatic CV cleanup from S3 when an application is withdrawn
+- Admin-controlled recruiter-to-company assignment
 - Clean Architecture with strict layer separation
 - Soft delete for users, companies, and jobs
 - Structured JSON logging with zerolog
 - Graceful server shutdown
 - Input validation with human-readable error messages
+- Interactive API documentation via Swagger UI
 - PostgreSQL via Docker Compose
 
 ---
 
 ## Tech Stack
 
-| Layer            | Technology                  |
-| ---------------- | --------------------------- |
-| Language         | Go 1.22+                    |
-| HTTP Framework   | Gin                         |
-| ORM              | GORM                        |
-| Database         | PostgreSQL 16               |
-| Authentication   | JWT (golang-jwt/jwt v5)     |
-| Password Hashing | bcrypt                      |
-| Validation       | go-playground/validator v10 |
-| Logging          | zerolog                     |
-| File Storage     | AWS S3 (pre-signed URLs)    |
-| AWS SDK          | aws-sdk-go-v2               |
-| Environment      | godotenv                    |
-| Testing          | testify                     |
-| Containerisation | Docker + Docker Compose     |
+| Layer             | Technology                  |
+| ----------------- | --------------------------- |
+| Language          | Go 1.22+                    |
+| HTTP Framework    | Gin                         |
+| ORM               | GORM                        |
+| Database          | PostgreSQL 16               |
+| Authentication    | JWT (golang-jwt/jwt v5)     |
+| Password Hashing  | bcrypt                      |
+| Validation        | go-playground/validator v10 |
+| Logging           | zerolog                     |
+| File Storage      | AWS S3 (pre-signed URLs)    |
+| AWS SDK           | aws-sdk-go-v2               |
+| API Documentation | Swagger UI (swaggo/swag)    |
+| Environment       | godotenv                    |
+| Testing           | testify                     |
+| Containerisation  | Docker + Docker Compose     |
 
 ---
 
@@ -130,11 +134,17 @@ hireflow/
 ├── internal/mocks/                  # Testify mock repositories + storage
 ├── internal/service/tests/          # Service layer unit tests
 │
+├── docs/                            # Auto-generated Swagger spec (swag init)
+│   ├── docs.go
+│   ├── swagger.json
+│   └── swagger.yaml
+│
 ├── http/                            # .http test files
 │   ├── auth.http
 │   ├── companies.http
 │   ├── jobs.http
-│   └── applications.http            # Includes CV upload flow tests
+│   ├── applications.http            # Includes CV upload flow tests
+│   └── users.http                   # Includes assign company tests
 │
 ├── .env                             # Local environment variables (never commit)
 ├── .env.example                     # Safe env template
@@ -169,11 +179,16 @@ users      ──< applications (one candidate submits many applications)
 ### Key Constraints
 
 - `users.deleted_at` — soft delete (GORM `DeletedAt`)
+- `users.company_id` — nullable; only set for recruiters after admin assignment
 - `companies.deleted_at` — soft delete
 - `jobs.deleted_at` — soft delete
 - `applications (job_id, candidate_id)` — unique constraint (no duplicate applications)
 - `applications.cv_key` — stores S3 object key, not the URL (URLs expire, keys don't)
 - `applications` — hard deleted on withdrawal, CV cleaned up from S3 automatically
+
+### Why `company_id` Is Assigned After Registration
+
+A recruiter registers without a company. An admin explicitly assigns them to a company via `PATCH /users/:id/assign-company`. This is intentional — it prevents a recruiter from self-assigning to any company during registration, which would be a trust and security problem. The admin controls which recruiters belong to which companies.
 
 ---
 
@@ -188,6 +203,12 @@ All routes are prefixed with `/api/v1`.
 | POST   | `/auth/register` | Register a new user      | Public |
 | POST   | `/auth/login`    | Login and receive JWT    | Public |
 | GET    | `/auth/me`       | Get current user profile | Any    |
+
+### Users
+
+| Method | Route                       | Description                     | Auth  |
+| ------ | --------------------------- | ------------------------------- | ----- |
+| PATCH  | `/users/:id/assign-company` | Assign a recruiter to a company | Admin |
 
 ### Companies
 
@@ -231,19 +252,20 @@ All routes are prefixed with `/api/v1`.
 
 ## Roles & Permissions
 
-| Action                     | Admin | Recruiter | Candidate |
-| -------------------------- | :---: | :-------: | :-------: |
-| Create company             |  ✅   |    ❌     |    ❌     |
-| Delete company             |  ✅   |    ❌     |    ❌     |
-| Update company             |  ❌   |    ✅     |    ❌     |
-| Post a job                 |  ❌   |    ✅     |    ❌     |
-| Close / delete own job     |  ❌   |    ✅     |    ❌     |
-| Get CV upload URL          |  ❌   |    ❌     |    ✅     |
-| Apply to a job             |  ❌   |    ❌     |    ✅     |
-| View own applications      |  ❌   |    ❌     |    ✅     |
-| View job's applications    |  ❌   |    ✅     |    ❌     |
-| Advance application status |  ❌   |    ✅     |    ❌     |
-| Withdraw application       |  ❌   |    ❌     |    ✅     |
+| Action                      | Admin | Recruiter | Candidate |
+| --------------------------- | :---: | :-------: | :-------: |
+| Create company              |  ✅   |    ❌     |    ❌     |
+| Delete company              |  ✅   |    ❌     |    ❌     |
+| Update company              |  ❌   |    ✅     |    ❌     |
+| Assign recruiter to company |  ✅   |    ❌     |    ❌     |
+| Post a job                  |  ❌   |    ✅     |    ❌     |
+| Close / delete own job      |  ❌   |    ✅     |    ❌     |
+| Get CV upload URL           |  ❌   |    ❌     |    ✅     |
+| Apply to a job              |  ❌   |    ❌     |    ✅     |
+| View own applications       |  ❌   |    ❌     |    ✅     |
+| View job's applications     |  ❌   |    ✅     |    ❌     |
+| Advance application status  |  ❌   |    ✅     |    ❌     |
+| Withdraw application        |  ❌   |    ❌     |    ✅     |
 
 > **Note:** Recruiter-level actions are additionally scoped — a recruiter can only manage jobs they personally posted and applications for those jobs.
 
@@ -319,6 +341,22 @@ Content-Type: application/json
   "password": "<your ADMIN_PASSWORD from .env>"
 }
 ```
+
+### 7. Assign a recruiter to a company
+
+After registering a recruiter and creating a company, link them together:
+
+```http
+PATCH http://localhost:8080/api/v1/users/<recruiter_id>/assign-company
+Authorization: Bearer <admin_token>
+Content-Type: application/json
+
+{
+  "company_id": "<company_id>"
+}
+```
+
+The recruiter can now post jobs under that company.
 
 ---
 
@@ -408,6 +446,45 @@ Recruiter opens cv_download_url in browser or Postman
 **Why PDF only?** The `GenerateUploadURL` call sets `ContentType: application/pdf` in the S3 signature. Uploading with any other content type returns `403 SignatureDoesNotMatch` from S3, enforcing the file type constraint at the infrastructure level.
 
 **What happens when an application is withdrawn?** The service calls `s3.DeleteObject(cv_key)` before deleting the application row. S3 cleanup is best-effort — if it fails, the withdrawal still succeeds.
+
+---
+
+## API Documentation
+
+HireFlow includes interactive API documentation powered by **Swagger UI**.
+
+### Generating the Docs
+
+Install the `swag` CLI (one time only):
+
+```bash
+go install github.com/swaggo/swag/cmd/swag@latest
+```
+
+Generate the docs from handler annotations:
+
+```bash
+swag init -g cmd/api/main.go --output docs
+```
+
+> Re-run this command whenever you add or change handler annotations. The `docs/` folder contains generated code — never edit it by hand.
+
+### Viewing the Docs
+
+Start the server, then open your browser:
+
+```
+http://localhost:8080/swagger/index.html
+```
+
+You will see the full interactive Swagger UI with all endpoints grouped by tag.
+
+### Authenticating in Swagger UI
+
+1. Call `POST /auth/login` in the UI and copy the `token` from the response
+2. Click the **Authorize 🔒** button at the top right of the page
+3. Enter `Bearer <your_token>` and click **Authorize**
+4. All subsequent requests from the UI will include your token automatically
 
 ---
 
