@@ -1,6 +1,8 @@
 package service
 
 import (
+	"context"
+
 	"github.com/google/uuid"
 	"github.com/gpslakshan/hireflow/internal/domain/dto"
 	"github.com/gpslakshan/hireflow/internal/domain/entity"
@@ -36,4 +38,8 @@ type ApplicationServiceInterface interface {
 	GetByID(id uuid.UUID, userID uuid.UUID, role string) (entity.Application, error)
 	UpdateStatus(id uuid.UUID, recruiterID uuid.UUID, req dto.UpdateApplicationStatusRequest) (entity.Application, error)
 	Withdraw(id uuid.UUID, candidateID uuid.UUID) error
+}
+
+type UploadServiceInterface interface {
+	GenerateCVUploadURL(ctx context.Context, candidateID string, fileName string) (dto.CVUploadURLResponse, error)
 }
