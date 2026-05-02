@@ -36,14 +36,16 @@ import (
 // @in                          header
 // @name                        Authorization
 // @description                 Enter your JWT token as: Bearer <token>
+
 func main() {
-	// 1. Config
+	// ── 1. Config ────────────────────────────────────────────
 	cfg := config.Load()
 
-	// 2. Logger — must initialise before anything else logs
+	// ── 2. Logger ────────────────────────────────────────────
+	// Must initialise before anything else logs.
 	config.InitLogger(cfg.AppEnv)
 
-	// 3. Database
+	// ── 3. Database ──────────────────────────────────────────
 	db := database.Connect(cfg)
 	database.Migrate(db)
 	database.Seed(db, cfg)
@@ -56,7 +58,7 @@ func main() {
 	sqlDB.SetMaxIdleConns(10)
 	defer sqlDB.Close()
 
-	// 4. Gin mode
+	// ── 4. Gin mode ──────────────────────────────────────────
 	if cfg.AppEnv == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	} else {
@@ -69,41 +71,51 @@ func main() {
 		log.Fatal().Err(err).Msg("failed to initialise S3 storage")
 	}
 
-	// 6. Repositories
+	// ── 6. Repositories ──────────────────────────────────────
 	userRepo := repository.NewUserRepository(db)
 	companyRepo := repository.NewCompanyRepository(db)
 	jobRepo := repository.NewJobRepository(db)
 	appRepo := repository.NewApplicationRepository(db)
 
-	// 7. Services
+	// ── 7. Services ──────────────────────────────────────────
 	authService := service.NewAuthService(userRepo, cfg)
+	userService := service.NewUserService(userRepo, companyRepo)
 	companyService := service.NewCompanyService(companyRepo)
 	jobService := service.NewJobService(jobRepo, companyRepo)
 	appService := service.NewApplicationService(appRepo, jobRepo, s3Storage)
 	uploadService := service.NewUploadService(s3Storage)
 
-	// 8. Handlers
+	// ── 8. Handlers ──────────────────────────────────────────
 	authHandler := handler.NewAuthHandler(authService)
+	userHandler := handler.NewUserHandler(userService)
 	companyHandler := handler.NewCompanyHandler(companyService)
 	jobHandler := handler.NewJobHandler(jobService)
 	appHandler := handler.NewApplicationHandler(appService)
 	uploadHandler := handler.NewUploadHandler(uploadService)
 
-	// 9. Router
-	r := router.Setup(cfg, authHandler, companyHandler, jobHandler, appHandler, uploadHandler)
+	// ── 9. Router ────────────────────────────────────────────
+	r := router.Setup(
+		cfg,
+		authHandler,
+		companyHandler,
+		jobHandler,
+		appHandler,
+		uploadHandler,
+		userHandler,
+	)
 
-	// 10. HTTP server
+	// ── 10. HTTP server ──────────────────────────────────────
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%s", cfg.AppPort),
 		Handler:      r,
-		ReadTimeout:  10 * time.Second, // max time to read request
-		WriteTimeout: 10 * time.Second, // max time to write response
-		IdleTimeout:  60 * time.Second, // max time for keep-alive connections
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  60 * time.Second,
 	}
 
 	// ── 11. Start in goroutine ───────────────────────────────
-	// Run in background so the main goroutine can listen for
-	// shutdown signals without blocking.
+	// Run in background so the main goroutine can block on the
+	// shutdown signal without preventing the server from starting.
 	go func() {
 		log.Info().Msgf("server starting on port %s", cfg.AppPort)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -112,14 +124,14 @@ func main() {
 	}()
 
 	// ── 12. Graceful shutdown ────────────────────────────────
-	// Block until SIGINT (Ctrl+C) or SIGTERM (Docker / Kubernetes)
+	// Block until SIGINT (Ctrl+C) or SIGTERM (Docker / Kubernetes).
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
 	log.Info().Msg("shutting down server...")
 
-	// Give in-flight requests 10 seconds to complete
+	// Give in-flight requests 10 seconds to complete before forcing exit.
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
