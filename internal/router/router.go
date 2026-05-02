@@ -16,6 +16,7 @@ func Setup(
 	companyHandler *handler.CompanyHandler,
 	jobHandler *handler.JobHandler,
 	appHandler *handler.ApplicationHandler,
+	uploadHandler *handler.UploadHandler,
 ) *gin.Engine {
 	r := gin.New()
 
@@ -115,6 +116,15 @@ func Setup(
 		applications.DELETE("/:id",
 			middleware.RequireRole("candidate"),
 			appHandler.Withdraw,
+		)
+	}
+
+	uploads := v1.Group("/uploads")
+	uploads.Use(middleware.AuthMiddleware(cfg))
+	{
+		uploads.POST("/cv-upload-url",
+			middleware.RequireRole("candidate"),
+			uploadHandler.GenerateCVUploadURL,
 		)
 	}
 
